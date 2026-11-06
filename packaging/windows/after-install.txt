@@ -1,0 +1,16 @@
+BiosFlash Studio is installed.
+
+Before connecting a CH341A programmer, install ONE driver:
+
+  * WCH CH341PAR driver (recommended) - the official driver from wch-ic.com
+    (search for "CH341PAR"). It provides CH341DLLA64.DLL, the same driver AsProgrammer uses.
+
+  * or WinUSB via Zadig (zadig.akeo.ie) - select "USB-EPP/I2C... CH341A" (1A86:5512)
+    and install WinUSB.
+
+Set the programmer jumper to SPI/I2C (pins 1-2), not UART.
+
+No programmer yet? Start "BiosFlash Studio (demo mode)" from the Start menu to try
+every feature with the built-in simulator.
+
+Always keep a verified backup of the original firmware before writing a chip.

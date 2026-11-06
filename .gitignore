@@ -1,0 +1,19 @@
+# build output
+bin/
+obj/
+dist/
+publish/
+*.user
+*.suo
+.vs/
+
+# test artifacts
+tests/SelfTest/bin/
+*.log
+
+# OS / editor
+Thumbs.db
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/settings.json

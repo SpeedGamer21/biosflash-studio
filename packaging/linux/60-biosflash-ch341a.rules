@@ -1,0 +1,3 @@
+# BiosFlash Studio - give the logged-in user access to CH341A programmers
+# CH341A in SPI/I2C (EPP/MEM) mode
+SUBSYSTEM=="usb", ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="5512", MODE="0666", TAG+="uaccess"

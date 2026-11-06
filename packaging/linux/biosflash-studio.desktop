@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=BiosFlash Studio
+GenericName=BIOS Programmer
+Comment=CH341A SPI / I2C BIOS flasher with firmware analysis and ASUS CAP tool
+Exec=biosflash-studio %f
+Icon=biosflash-studio
+Terminal=false
+Categories=Development;Electronics;Utility;
+Keywords=bios;flash;ch341a;spi;eeprom;uefi;asus;cap;
+StartupWMClass=BiosFlashStudio
