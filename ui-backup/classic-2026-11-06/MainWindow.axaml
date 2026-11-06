@@ -1,0 +1,1171 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:c="using:BiosFlashStudio.Controls"
+        xmlns:ui="using:BiosFlashStudio.Ui"
+        x:Class="BiosFlashStudio.MainWindow"
+        Title="BiosFlash Studio — CH341A SPI / I²C Programmer"
+        Width="1560" Height="1000" MinWidth="1120" MinHeight="740"
+        WindowStartupLocation="CenterScreen"
+        DragDrop.AllowDrop="True">
+
+    <Grid ColumnDefinitions="224,*" RowDefinitions="*,Auto">
+
+        <!-- ======================= SIDEBAR ======================= -->
+        <Border Grid.RowSpan="2" Background="{DynamicResource SidebarBg}" BorderBrush="{DynamicResource Line}" BorderThickness="0,0,1,0">
+            <DockPanel>
+                <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="20,20,16,18" Spacing="11">
+                    <Border Width="38" Height="38" CornerRadius="11" Background="{DynamicResource Accent}">
+                        <ui:Ico Kind="chip" Width="22" Height="22" Brush="{DynamicResource AccentFg}" Stroke="2.1"/>
+                    </Border>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="BiosFlash" FontSize="17" FontWeight="Bold"/>
+                        <TextBlock Text="STUDIO 2" FontSize="10.5" FontWeight="Bold" Foreground="{DynamicResource Accent}"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <StackPanel DockPanel.Dock="Bottom" Margin="14,8,14,14" Spacing="8">
+                    <Button x:Name="ThemeBtn" Classes="ghost" HorizontalAlignment="Stretch" Click="Theme_Click">
+                        <StackPanel Orientation="Horizontal" Spacing="9">
+                            <ui:Ico x:Name="ThemeIco" Kind="sun"/>
+                            <TextBlock x:Name="ThemeText" Text="Light theme"/>
+                        </StackPanel>
+                    </Button>
+                    <Border Classes="inset" Padding="10,8">
+                        <StackPanel Spacing="2">
+                            <TextBlock x:Name="PlatformText" Text="Windows" FontSize="11" Foreground="{DynamicResource TxtDim}" TextTrimming="CharacterEllipsis"/>
+                            <TextBlock Text="v2.0 · keep a verified backup" FontSize="11" Foreground="{DynamicResource TxtFaint}"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <ListBox x:Name="Nav" Classes="nav" SelectionChanged="Nav_SelectionChanged">
+                    <ListBoxItem Classes="group" IsEnabled="False"><TextBlock Text="WORKSPACE"/></ListBoxItem>
+                    <ListBoxItem Tag="0"><StackPanel Orientation="Horizontal" Spacing="11"><ui:Ico Kind="grid"/><TextBlock Text="Overview"/></StackPanel></ListBoxItem>
+                    <ListBoxItem Tag="1"><StackPanel Orientation="Horizontal" Spacing="11"><ui:Ico Kind="hex"/><TextBlock Text="Hex Editor"/></StackPanel></ListBoxItem>
+                    <ListBoxItem Tag="2"><StackPanel Orientation="Horizontal" Spacing="11"><ui:Ico Kind="pulse"/><TextBlock Text="Firmware Analysis"/></StackPanel></ListBoxItem>
+                    <ListBoxItem Tag="3"><StackPanel Orientation="Horizontal" Spacing="11"><ui:Ico Kind="box"/><TextBlock Text="ASUS CAP Tool"/></StackPanel></ListBoxItem>
+                    <ListBoxItem Tag="4"><StackPanel Orientation="Horizontal" Spacing="11"><ui:Ico Kind="verify"/><TextBlock Text="Repair Tools"/></StackPanel></ListBoxItem>
+                    <ListBoxItem Tag="5"><StackPanel Orientation="Horizontal" Spacing="11"><ui:Ico Kind="layers"/><TextBlock Text="Update Extractor"/></StackPanel></ListBoxItem>
+                    <ListBoxItem Tag="6"><StackPanel Orientation="Horizontal" Spacing="11"><ui:Ico Kind="sun"/><TextBlock Text="Boot Logo"/></StackPanel></ListBoxItem>
+                    <ListBoxItem Classes="group" IsEnabled="False"><TextBlock Text="DEVICE"/></ListBoxItem>
+                    <ListBoxItem Tag="7"><StackPanel Orientation="Horizontal" Spacing="11"><ui:Ico Kind="tune"/><TextBlock Text="Chip Functions"/></StackPanel></ListBoxItem>
+                    <ListBoxItem Tag="8"><StackPanel Orientation="Horizontal" Spacing="11"><ui:Ico Kind="db"/><TextBlock Text="Chip Database"/></StackPanel></ListBoxItem>
+                    <ListBoxItem Tag="9"><StackPanel Orientation="Horizontal" Spacing="11"><ui:Ico Kind="pin"/><TextBlock Text="Pinout &amp; Wiring"/></StackPanel></ListBoxItem>
+                    <ListBoxItem Classes="group" IsEnabled="False"><TextBlock Text="SYSTEM"/></ListBoxItem>
+                    <ListBoxItem Tag="10"><StackPanel Orientation="Horizontal" Spacing="11"><ui:Ico Kind="clock"/><TextBlock Text="History"/></StackPanel></ListBoxItem>
+                    <ListBoxItem Tag="11"><StackPanel Orientation="Horizontal" Spacing="11"><ui:Ico Kind="gear"/><TextBlock Text="Settings"/></StackPanel></ListBoxItem>
+                    <ListBoxItem Tag="12"><StackPanel Orientation="Horizontal" Spacing="11"><ui:Ico Kind="term"/><TextBlock Text="Diagnostics"/></StackPanel></ListBoxItem>
+                </ListBox>
+            </DockPanel>
+        </Border>
+
+        <!-- ======================= MAIN ======================= -->
+        <Grid Grid.Column="1" Margin="20,14,20,10" RowDefinitions="Auto,Auto,Auto,*">
+
+            <!-- header -->
+            <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,12">
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock x:Name="PageTitle" Text="Overview" FontSize="22" FontWeight="Bold"/>
+                    <TextBlock x:Name="PageSub" Text="Firmware identity, DMI and OEM key at a glance" Classes="dim" FontSize="12.5"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                    <Border x:Name="ConnPill" CornerRadius="20" Padding="12,6" BorderThickness="1" BorderBrush="{DynamicResource Bad}" Background="{DynamicResource BadBg}">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Ellipse x:Name="ConnDot" Width="8" Height="8" Fill="{DynamicResource Bad}"/>
+                            <TextBlock x:Name="ConnText" Text="Disconnected" FontWeight="SemiBold" FontSize="12" Foreground="{DynamicResource Bad}"/>
+                        </StackPanel>
+                    </Border>
+                    <ComboBox x:Name="BackendCombo" Width="215" SelectionChanged="BackendCombo_SelectionChanged" ToolTip.Tip="Programmer backend / driver"/>
+                    <Button x:Name="ConnectBtn" Classes="accent" Click="Connect_Click">
+                        <StackPanel Orientation="Horizontal" Spacing="7"><ui:Ico Kind="usb"/><TextBlock x:Name="ConnectText" Text="Connect"/></StackPanel>
+                    </Button>
+                    <Button x:Name="LogToggle" Click="LogToggle_Click" ToolTip.Tip="Show / hide the activity log">
+                        <StackPanel Orientation="Horizontal" Spacing="7"><ui:Ico Kind="log"/><TextBlock Text="Log"/></StackPanel>
+                    </Button>
+                </StackPanel>
+            </Grid>
+
+            <!-- status cards -->
+            <Grid Grid.Row="1" ColumnDefinitions="*,12,*,12,1.25*" Margin="0,0,0,12">
+                <!-- programmer -->
+                <Border Classes="card">
+                    <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto">
+                        <Border Classes="tile"><ui:Ico Kind="usb" Width="20" Height="20" Brush="{DynamicResource Accent}"/></Border>
+                        <StackPanel Grid.Column="1" Margin="12,0,0,0">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <TextBlock Classes="h" Text="PROGRAMMER"/>
+                                <Border x:Name="HwPill" Grid.Column="1" Classes="pill" BorderBrush="{DynamicResource Bad}"><TextBlock x:Name="HwPillText" Text="OFFLINE" Foreground="{DynamicResource Bad}"/></Border>
+                            </Grid>
+                            <TextBlock x:Name="HwInterface" Text="CH341A" Classes="h2" TextTrimming="CharacterEllipsis"/>
+                        </StackPanel>
+                        <Grid Grid.Row="1" Grid.ColumnSpan="2" ColumnDefinitions="Auto,*" Margin="0,10,0,0">
+                            <StackPanel>
+                                <TextBlock Classes="lbl" Text="Backend"/>
+                                <TextBlock Classes="lbl" Text="Driver"/>
+                                <TextBlock Classes="lbl" Text="VID:PID"/>
+                                <TextBlock Classes="lbl" Text="Speed"/>
+                                <TextBlock Classes="lbl" Text="Device"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1">
+                                <TextBlock x:Name="HwBackend" Classes="val" Text="—"/>
+                                <TextBlock x:Name="HwDriver" Classes="val" Text="—"/>
+                                <TextBlock x:Name="HwVidPid" Classes="val" Text="1A86:5512"/>
+                                <TextBlock x:Name="HwSpeed" Classes="val" Text="—"/>
+                                <TextBlock x:Name="HwDevice" Classes="val" Text="—"/>
+                            </StackPanel>
+                        </Grid>
+                    </Grid>
+                </Border>
+                <!-- chip -->
+                <Border Grid.Column="2" Classes="card">
+                    <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto">
+                        <Border Classes="tile" Background="{DynamicResource InfoBg}"><ui:Ico Kind="chip" Width="20" Height="20" Brush="{DynamicResource Info}"/></Border>
+                        <StackPanel Grid.Column="1" Margin="12,0,0,0">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <TextBlock Classes="h" Text="FLASH CHIP"/>
+                                <Border x:Name="ChipPill" Grid.Column="1" Classes="pill"><TextBlock x:Name="ChipPillText" Text="MANUAL" Foreground="{DynamicResource TxtDim}"/></Border>
+                            </Grid>
+                            <TextBlock x:Name="ChipPart" Text="—" Classes="h2" TextTrimming="CharacterEllipsis"/>
+                        </StackPanel>
+                        <Grid Grid.Row="1" Grid.ColumnSpan="2" ColumnDefinitions="Auto,*" Margin="0,10,0,0">
+                            <StackPanel>
+                                <TextBlock Classes="lbl" Text="Vendor"/>
+                                <TextBlock Classes="lbl" Text="JEDEC ID"/>
+                                <TextBlock Classes="lbl" Text="Capacity"/>
+                                <TextBlock Classes="lbl" Text="Voltage"/>
+                                <TextBlock Classes="lbl" Text="Page / addr"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1">
+                                <TextBlock x:Name="ChipMfr" Classes="val" Text="—"/>
+                                <TextBlock x:Name="ChipJedec" Classes="val" Text="—"/>
+                                <TextBlock x:Name="ChipCap" Classes="val" Text="—"/>
+                                <TextBlock x:Name="ChipVolt" Classes="val" Text="—"/>
+                                <TextBlock x:Name="ChipPage" Classes="val" Text="—"/>
+                            </StackPanel>
+                        </Grid>
+                    </Grid>
+                </Border>
+                <!-- image buffer -->
+                <Border Grid.Column="4" Classes="card">
+                    <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto">
+                        <Border Classes="tile" Background="{DynamicResource WarnBg}"><ui:Ico Kind="file" Width="20" Height="20" Brush="{DynamicResource Warn}"/></Border>
+                        <StackPanel Grid.Column="1" Margin="12,0,0,0">
+                            <Grid ColumnDefinitions="Auto,*,Auto">
+                                <TextBlock Classes="h" Text="FIRMWARE BUFFER"/>
+                                <Border x:Name="BufPill" Grid.Column="1" Classes="pill" Margin="10,0,0,0" HorizontalAlignment="Left"><TextBlock x:Name="BufPillText" Text="EMPTY" Foreground="{DynamicResource TxtDim}"/></Border>
+                                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6">
+                                    <Button Classes="small accent" Click="Open_Click" ToolTip.Tip="Open .bin / .rom / .cap (Ctrl+O)">
+                                        <StackPanel Orientation="Horizontal" Spacing="6"><ui:Ico Kind="open" Width="14" Height="14"/><TextBlock Text="Open"/></StackPanel>
+                                    </Button>
+                                    <Button Classes="small" Click="Save_Click" ToolTip.Tip="Save buffer (Ctrl+S)">
+                                        <StackPanel Orientation="Horizontal" Spacing="6"><ui:Ico Kind="save" Width="14" Height="14"/><TextBlock Text="Save"/></StackPanel>
+                                    </Button>
+                                    <Button Classes="small ghost" Click="ClearBuffer_Click" ToolTip.Tip="Clear buffer"><ui:Ico Kind="erase" Width="14" Height="14"/></Button>
+                                </StackPanel>
+                            </Grid>
+                            <TextBlock x:Name="BufName" Text="No image loaded" Classes="h2" TextTrimming="CharacterEllipsis"/>
+                        </StackPanel>
+                        <Grid Grid.Row="1" Grid.ColumnSpan="2" ColumnDefinitions="Auto,*" Margin="0,10,0,0">
+                            <StackPanel>
+                                <TextBlock Classes="lbl" Text="Size"/>
+                                <TextBlock Classes="lbl" Text="CRC32"/>
+                                <TextBlock Classes="lbl" Text="SHA-256"/>
+                                <TextBlock Classes="lbl" Text="Checksum"/>
+                                <TextBlock Classes="lbl" Text="Status"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1">
+                                <TextBlock x:Name="BufSize" Classes="val" Text="—"/>
+                                <TextBlock x:Name="BufCrc" Classes="val" Text="—" Foreground="{DynamicResource Info}"/>
+                                <TextBlock x:Name="BufSha" Classes="val" Text="—" FontSize="11.5"/>
+                                <TextBlock x:Name="BufSum" Classes="val" Text="—"/>
+                                <TextBlock x:Name="BufStatus" Classes="val" Text="—" Foreground="{DynamicResource TxtDim}"/>
+                            </StackPanel>
+                        </Grid>
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <!-- operation deck -->
+            <Border Grid.Row="2" Classes="card" Padding="14,12" Margin="0,0,0,12">
+                <Grid RowDefinitions="Auto,Auto">
+                    <Grid ColumnDefinitions="Auto,*,Auto">
+                        <StackPanel Width="300" Spacing="6" Margin="0,0,16,0" VerticalAlignment="Center">
+                            <TextBlock Classes="h" Text="TARGET"/>
+                            <ComboBox x:Name="ModeCombo" HorizontalAlignment="Stretch" SelectedIndex="0" SelectionChanged="ModeCombo_SelectionChanged">
+                                <ComboBoxItem Content="SPI flash  (25xx)"/>
+                                <ComboBoxItem Content="I²C EEPROM  (24xx)"/>
+                            </ComboBox>
+                            <ComboBox x:Name="ChipCombo" HorizontalAlignment="Stretch" MaxDropDownHeight="460" SelectionChanged="ChipCombo_SelectionChanged" DisplayMemberBinding="{Binding Display}"/>
+                        </StackPanel>
+                        <WrapPanel Grid.Column="1" VerticalAlignment="Center">
+                            <Button x:Name="DetectBtn" Classes="op" Click="Detect_Click" ToolTip.Tip="Identify the chip (JEDEC 9Fh)">
+                                <StackPanel Spacing="3"><ui:Ico Kind="search" Width="20" Height="20"/><TextBlock Text="Detect" HorizontalAlignment="Center"/><TextBlock Classes="k" Text="F5"/></StackPanel>
+                            </Button>
+                            <Button x:Name="ReadBtn" Classes="op" Click="Read_Click" ToolTip.Tip="Read the whole chip into the buffer">
+                                <StackPanel Spacing="3"><ui:Ico Kind="read" Width="20" Height="20"/><TextBlock Text="Read" HorizontalAlignment="Center"/><TextBlock Classes="k" Text="F6"/></StackPanel>
+                            </Button>
+                            <Button x:Name="EraseBtn" Classes="op" Click="Erase_Click" ToolTip.Tip="Erase the chip">
+                                <StackPanel Spacing="3"><ui:Ico Kind="erase" Width="20" Height="20"/><TextBlock Text="Erase" HorizontalAlignment="Center"/><TextBlock Classes="k" Text="—"/></StackPanel>
+                            </Button>
+                            <Button x:Name="BlankBtn" Classes="op" Click="Blank_Click" ToolTip.Tip="Check that the chip is all 0xFF">
+                                <StackPanel Spacing="3"><ui:Ico Kind="blank" Width="20" Height="20"/><TextBlock Text="Blank" HorizontalAlignment="Center"/><TextBlock Classes="k" Text="F4"/></StackPanel>
+                            </Button>
+                            <Button x:Name="ProgramBtn" Classes="op" Click="Program_Click" ToolTip.Tip="Write the buffer to the chip">
+                                <StackPanel Spacing="3"><ui:Ico Kind="write" Width="20" Height="20"/><TextBlock Text="Program" HorizontalAlignment="Center"/><TextBlock Classes="k" Text="F9"/></StackPanel>
+                            </Button>
+                            <Button x:Name="VerifyBtn" Classes="op" Click="Verify_Click" ToolTip.Tip="Compare chip with the buffer">
+                                <StackPanel Spacing="3"><ui:Ico Kind="verify" Width="20" Height="20"/><TextBlock Text="Verify" HorizontalAlignment="Center"/><TextBlock Classes="k" Text="F7"/></StackPanel>
+                            </Button>
+                            <Button x:Name="AutoBtn" Classes="op accent" Width="112" Click="Auto_Click" ToolTip.Tip="Unprotect → erase → blank check → program → verify">
+                                <StackPanel Spacing="3"><ui:Ico Kind="auto" Width="20" Height="20"/><TextBlock Text="Auto Program" HorizontalAlignment="Center"/><TextBlock Classes="k" Text="F8"/></StackPanel>
+                            </Button>
+                        </WrapPanel>
+                        <Button x:Name="CancelBtn" Grid.Column="2" Classes="op danger" Margin="0" IsEnabled="False" Click="Cancel_Click" ToolTip.Tip="Stop the running operation">
+                            <StackPanel Spacing="3"><ui:Ico Kind="cancel" Width="20" Height="20"/><TextBlock Text="Cancel" HorizontalAlignment="Center"/><TextBlock Classes="k" Text="Esc"/></StackPanel>
+                        </Button>
+                    </Grid>
+
+                    <Grid Grid.Row="1" ColumnDefinitions="*,Auto" Margin="0,12,0,0">
+                        <StackPanel Spacing="6" Margin="0,0,14,0" VerticalAlignment="Center">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <TextBlock x:Name="OpTitle" Text="IDLE" FontWeight="Bold" FontSize="12.5"/>
+                                    <TextBlock x:Name="OpDetail" Text="Ready." Classes="dim" FontSize="12.5" TextTrimming="CharacterEllipsis" MaxWidth="700"/>
+                                </StackPanel>
+                                <TextBlock Grid.Column="1" x:Name="OpPercent" Text="0.0%" Classes="mono" FontWeight="Bold" Foreground="{DynamicResource Accent}"/>
+                            </Grid>
+                            <ProgressBar x:Name="OpBar" Maximum="1000"/>
+                            <Grid ColumnDefinitions="*,Auto">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <TextBlock x:Name="OpBytes" Text="0 B / 0 B" Classes="mono" FontSize="12" Margin="0,0,14,0"/>
+                                    <TextBlock Text="Speed" Classes="dim" FontSize="12"/>
+                                    <TextBlock x:Name="OpSpeed" Text="—" Classes="mono" FontSize="12" Margin="0,0,14,0"/>
+                                    <TextBlock Text="Elapsed" Classes="dim" FontSize="12"/>
+                                    <TextBlock x:Name="OpElapsed" Text="00:00" Classes="mono" FontSize="12" Margin="0,0,14,0"/>
+                                    <TextBlock Text="Remaining" Classes="dim" FontSize="12"/>
+                                    <TextBlock x:Name="OpRemain" Text="—" Classes="mono" FontSize="12"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
+                                    <TextBlock Text="Address" Classes="dim" FontSize="12"/>
+                                    <TextBlock x:Name="OpAddr" Text="0x00000000" Classes="mono" FontSize="12" Foreground="{DynamicResource Info}"/>
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                        <Border x:Name="ResultBox" Grid.Column="1" Width="280" CornerRadius="10" BorderThickness="1" Padding="12,8"
+                                BorderBrush="{DynamicResource Line}" Background="{DynamicResource CardBg2}">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <ui:Ico x:Name="ResultIco" Kind="info" Width="26" Height="26" Brush="{DynamicResource TxtDim}" Margin="0,0,10,0"/>
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock x:Name="ResultTitle" Text="READY" FontWeight="Bold" FontSize="12.5" Foreground="{DynamicResource TxtDim}" TextTrimming="CharacterEllipsis"/>
+                                    <TextBlock x:Name="ResultText" Text="No operation yet." FontSize="11.5" Foreground="{DynamicResource TxtDim}" TextWrapping="Wrap" MaxHeight="32" TextTrimming="CharacterEllipsis"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                    </Grid>
+                </Grid>
+            </Border>
+
+            <!-- pages + log -->
+            <Grid Grid.Row="3" x:Name="WorkGrid" ColumnDefinitions="*,12,380">
+                <Panel x:Name="Pages">
+
+                    <!-- ==== 0 OVERVIEW ==== -->
+                    <ScrollViewer x:Name="PgOverview" VerticalScrollBarVisibility="Auto">
+                        <StackPanel Spacing="12">
+                            <Grid ColumnDefinitions="1*,12,1.25*">
+                                <Border Classes="card">
+                                    <StackPanel>
+                                        <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,10">
+                                            <StackPanel Orientation="Horizontal" Spacing="8"><ui:Ico Kind="layers" Brush="{DynamicResource Accent}"/><TextBlock Classes="h" Text="PLATFORM"/></StackPanel>
+                                            <Border x:Name="IntelPill" Grid.Column="1" Classes="pill" BorderBrush="{DynamicResource Accent}" IsVisible="False"><TextBlock x:Name="IntelPillText" Text="INTEL" Foreground="{DynamicResource Accent}"/></Border>
+                                        </Grid>
+                                        <Grid ColumnDefinitions="Auto,*">
+                                            <StackPanel>
+                                                <TextBlock Classes="lbl" Text="Platform"/>
+                                                <TextBlock Classes="lbl" Text="Engine / ME"/>
+                                                <TextBlock Classes="lbl" Text="BIOS vendor"/>
+                                                <TextBlock Classes="lbl" Text="BIOS version"/>
+                                                <TextBlock Classes="lbl" Text="Descriptor"/>
+                                                <TextBlock Classes="lbl" Text="GbE MAC"/>
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="1">
+                                                <TextBlock x:Name="IntelPlatform" Classes="val" Text="—"/>
+                                                <TextBlock x:Name="IntelMe" Classes="val" Text="—" Foreground="{DynamicResource Warn}"/>
+                                                <TextBlock x:Name="IntelVendor" Classes="val" Text="—"/>
+                                                <TextBlock x:Name="IntelBiosVer" Classes="val" Text="—"/>
+                                                <TextBlock x:Name="IntelIfd" Classes="val" Text="—"/>
+                                                <TextBlock x:Name="MacText" Classes="val" Text="—"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+                                <Border Grid.Column="2" Classes="card">
+                                    <DockPanel>
+                                        <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,10">
+                                            <StackPanel Orientation="Horizontal" Spacing="8"><ui:Ico Kind="chip" Brush="{DynamicResource Info}"/><TextBlock Classes="h" Text="MOTHERBOARD / LAPTOP DMI"/></StackPanel>
+                                            <Border Grid.Column="1" Classes="pill" BorderBrush="{DynamicResource Info}"><TextBlock x:Name="DmiCount" Text="0 FIELDS" Foreground="{DynamicResource Info}"/></Border>
+                                        </Grid>
+                                        <Border Classes="inset" Height="128" Padding="10,6">
+                                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                                <ItemsControl x:Name="DmiList">
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <Grid ColumnDefinitions="120,*" ToolTip.Tip="{Binding Source}">
+                                                                <TextBlock Text="{Binding Key}" Classes="val" Foreground="{DynamicResource Info}"/>
+                                                                <TextBlock Grid.Column="1" Text="{Binding Value}" Classes="val"/>
+                                                            </Grid>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </ScrollViewer>
+                                        </Border>
+                                    </DockPanel>
+                                </Border>
+                            </Grid>
+
+                            <Border Classes="card" Padding="16,12">
+                                <Grid ColumnDefinitions="Auto,*,Auto">
+                                    <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,0,16,0">
+                                        <Border Classes="tile" Background="{DynamicResource GoodBg}" VerticalAlignment="Center"><ui:Ico Kind="key" Width="20" Height="20" Brush="{DynamicResource Good}"/></Border>
+                                        <StackPanel VerticalAlignment="Center">
+                                            <TextBlock Classes="h" Text="WINDOWS OEM KEY"/>
+                                            <TextBlock x:Name="OemKeySrc" Text="ACPI MSDM table / NVRAM" FontSize="11" Classes="dim" TextTrimming="CharacterEllipsis" MaxWidth="230"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                    <Border Grid.Column="1" Classes="inset" Padding="14,8" Background="{DynamicResource GoodBg}" BorderBrush="{DynamicResource Good}" VerticalAlignment="Center">
+                                        <TextBlock x:Name="OemKeyText" Text="— not found —" Classes="mono" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource Good}" TextTrimming="CharacterEllipsis"/>
+                                    </Border>
+                                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" Margin="14,0,0,0" VerticalAlignment="Center">
+                                        <Button Classes="small" Click="CopyKey_Click"><StackPanel Orientation="Horizontal" Spacing="6"><ui:Ico Kind="copy" Width="14" Height="14"/><TextBlock Text="Copy"/></StackPanel></Button>
+                                        <Button Classes="small" Click="ExportReport_Click"><StackPanel Orientation="Horizontal" Spacing="6"><ui:Ico Kind="export" Width="14" Height="14"/><TextBlock Text="Export TXT"/></StackPanel></Button>
+                                        <Button Classes="small" Click="ShowAnalysis_Click"><StackPanel Orientation="Horizontal" Spacing="6"><ui:Ico Kind="pulse" Width="14" Height="14"/><TextBlock Text="Deep analysis"/></StackPanel></Button>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+
+                            <Border Classes="card">
+                                <StackPanel Spacing="10">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <StackPanel Orientation="Horizontal" Spacing="8"><ui:Ico Kind="layers" Brush="{DynamicResource Accent}"/><TextBlock Classes="h" Text="FLASH LAYOUT"/></StackPanel>
+                                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="18">
+                                            <TextBlock x:Name="OvStat1" Text="" Classes="dim" FontSize="12"/>
+                                            <TextBlock x:Name="OvStat2" Text="" Classes="dim" FontSize="12"/>
+                                            <TextBlock x:Name="OvStat3" Text="" Classes="dim" FontSize="12"/>
+                                        </StackPanel>
+                                    </Grid>
+                                    <c:RegionBar x:Name="RegionBarOv"/>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Classes="card">
+                                <Grid ColumnDefinitions="*,*,*,*">
+                                    <StackPanel Margin="0,0,14,0" Spacing="4">
+                                        <TextBlock Text="1 · Connect" FontWeight="SemiBold"/>
+                                        <TextBlock Classes="hint" Text="Jumper on SPI (pins 1-2), clip pin 1 to the red wire. Unplug the laptop battery and CMOS cell."/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Margin="0,0,14,0" Spacing="4">
+                                        <TextBlock Text="2 · Detect &amp; read" FontWeight="SemiBold"/>
+                                        <TextBlock Classes="hint" Text="F5 identifies the chip, F6 reads it. Every read is auto-saved as a backup."/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2" Margin="0,0,14,0" Spacing="4">
+                                        <TextBlock Text="3 · Prepare the image" FontWeight="SemiBold"/>
+                                        <TextBlock Classes="hint" Text="Open a .bin, or turn an ASUS .CAP into a flashable image in the CAP Tool (keeps your MAC)."/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="3" Spacing="4">
+                                        <TextBlock Text="4 · Auto program" FontWeight="SemiBold"/>
+                                        <TextBlock Classes="hint" Text="F8 removes protection, erases, programs and verifies in one step."/>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <!-- ==== 1 HEX ==== -->
+                    <Border x:Name="PgHex" Classes="card" Padding="12,10" IsVisible="False">
+                        <DockPanel>
+                            <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,*" Margin="0,0,0,8">
+                                <Border Classes="pill" BorderBrush="{DynamicResource Accent}"><TextBlock x:Name="HexSource" Text="EMPTY" Foreground="{DynamicResource Accent}"/></Border>
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="6">
+                                    <TextBox x:Name="GotoBox" Width="110" Classes="code" IsReadOnly="False" AcceptsReturn="False" VerticalContentAlignment="Center" Text="0x00000000" KeyDown="GotoBox_KeyDown" Watermark="Address"/>
+                                    <Button Classes="small" Content="Go" Click="Goto_Click"/>
+                                    <ComboBox x:Name="FindMode" Width="90" SelectedIndex="0">
+                                        <ComboBoxItem Content="Hex"/>
+                                        <ComboBoxItem Content="Text"/>
+                                        <ComboBoxItem Content="UTF-16"/>
+                                    </ComboBox>
+                                    <TextBox x:Name="FindBox" Width="170" Classes="code" IsReadOnly="False" AcceptsReturn="False" VerticalContentAlignment="Center" KeyDown="FindBox_KeyDown" Watermark="24 46 50 54 or text"/>
+                                    <Button Classes="small" Click="Find_Click"><StackPanel Orientation="Horizontal" Spacing="6"><ui:Ico Kind="search" Width="14" Height="14"/><TextBlock Text="Find"/></StackPanel></Button>
+                                    <Button Classes="small" Click="Compare_Click"><StackPanel Orientation="Horizontal" Spacing="6"><ui:Ico Kind="compare" Width="14" Height="14"/><TextBlock Text="Compare…"/></StackPanel></Button>
+                                    <Button Classes="small" Click="Revert_Click"><StackPanel Orientation="Horizontal" Spacing="6"><ui:Ico Kind="refresh" Width="14" Height="14"/><TextBlock Text="Revert"/></StackPanel></Button>
+                                </StackPanel>
+                            </Grid>
+                            <TextBlock x:Name="HexStatus" DockPanel.Dock="Bottom" Margin="2,8,0,0" Classes="mono dim" FontSize="11.5" Text="Buffer: 0 bytes"/>
+                            <Border Classes="inset" ClipToBounds="True">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <c:HexView x:Name="Hex"/>
+                                    <ScrollBar x:Name="HexScroll" Grid.Column="1" Orientation="Vertical" AllowAutoHide="False"/>
+                                </Grid>
+                            </Border>
+                        </DockPanel>
+                    </Border>
+
+                    <!-- ==== 2 ANALYSIS ==== -->
+                    <ScrollViewer x:Name="PgAnalysis" VerticalScrollBarVisibility="Auto" IsVisible="False">
+                        <StackPanel Spacing="12">
+                            <Border Classes="card">
+                                <StackPanel Spacing="10">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <TextBlock Classes="h" Text="FLASH REGION MAP"/>
+                                        <WrapPanel Grid.Column="1">
+                                            <Button Classes="small" Margin="6,0,0,0" Click="Reanalyze_Click"><StackPanel Orientation="Horizontal" Spacing="6"><ui:Ico Kind="refresh" Width="14" Height="14"/><TextBlock Text="Re-analyze"/></StackPanel></Button>
+                                            <Button Classes="small" Margin="6,0,0,0" Click="ExtractRegion_Click"><StackPanel Orientation="Horizontal" Spacing="6"><ui:Ico Kind="export" Width="14" Height="14"/><TextBlock Text="Extract region…"/></StackPanel></Button>
+                                            <Button Classes="small" Margin="6,0,0,0" Click="ReplaceRegion_Click"><StackPanel Orientation="Horizontal" Spacing="6"><ui:Ico Kind="merge" Width="14" Height="14"/><TextBlock Text="Replace region…"/></StackPanel></Button>
+                                            <Button Classes="small" Margin="6,0,0,0" Click="UnlockIfd_Click"><StackPanel Orientation="Horizontal" Spacing="6"><ui:Ico Kind="unlock" Width="14" Height="14"/><TextBlock Text="Unlock descriptor"/></StackPanel></Button>
+                                            <Button Classes="small" Margin="6,0,0,0" Click="ExportReport_Click"><StackPanel Orientation="Horizontal" Spacing="6"><ui:Ico Kind="save" Width="14" Height="14"/><TextBlock Text="Export report"/></StackPanel></Button>
+                                        </WrapPanel>
+                                    </Grid>
+                                    <c:RegionBar x:Name="RegionBarCtl"/>
+                                </StackPanel>
+                            </Border>
+                            <Grid ColumnDefinitions="1.3*,12,1*">
+                                <Border Classes="card">
+                                    <StackPanel Spacing="8">
+                                        <TextBlock x:Name="IfdTitle" Classes="h" Text="DESCRIPTOR REGIONS"/>
+                                        <DataGrid x:Name="RegionGrid" Height="210">
+                                            <DataGrid.Columns>
+                                                <DataGridTextColumn Header="Region" Binding="{Binding Name}" Width="*" MinWidth="110"/>
+                                                <DataGridTextColumn Header="Start" Binding="{Binding StartText}" Tag="mono"/>
+                                                <DataGridTextColumn Header="End" Binding="{Binding EndText}" Tag="mono"/>
+                                                <DataGridTextColumn Header="Size" Binding="{Binding SizeText}"/>
+                                                <DataGridTextColumn Header="Host" Binding="{Binding HostAccess}" Tag="mono"/>
+                                                <DataGridTextColumn Header="ME" Binding="{Binding MeAccess}" Tag="mono"/>
+                                                <DataGridTextColumn Header="State" Binding="{Binding State}"/>
+                                            </DataGrid.Columns>
+                                        </DataGrid>
+                                        <TextBlock Classes="h" Text="ME FLASH PARTITION TABLE ($FPT)" Margin="0,6,0,0"/>
+                                        <DataGrid x:Name="FptGrid" Height="170">
+                                            <DataGrid.Columns>
+                                                <DataGridTextColumn Header="Name" Binding="{Binding Name}" Tag="mono"/>
+                                                <DataGridTextColumn Header="Owner" Binding="{Binding Owner}" Tag="mono"/>
+                                                <DataGridTextColumn Header="Offset" Binding="{Binding OffsetText}" Tag="mono"/>
+                                                <DataGridTextColumn Header="Length" Binding="{Binding LengthText}" Width="*"/>
+                                                <DataGridTextColumn Header="State" Binding="{Binding State}"/>
+                                            </DataGrid.Columns>
+                                        </DataGrid>
+                                    </StackPanel>
+                                </Border>
+                                <Border Grid.Column="2" Classes="card">
+                                    <StackPanel Spacing="8">
+                                        <TextBlock Classes="h" Text="ME / CSE REPORT"/>
+                                        <Border Classes="inset" Padding="0">
+                                            <ItemsControl x:Name="MeTable">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Border BorderBrush="{DynamicResource Line}" BorderThickness="0,0,0,1" Padding="12,6">
+                                                            <Grid ColumnDefinitions="200,*">
+                                                                <TextBlock Text="{Binding Key}" Classes="mono dim" FontSize="12"/>
+                                                                <TextBlock Grid.Column="1" Text="{Binding Value}" Classes="mono" FontSize="12" Foreground="{DynamicResource Good}" TextTrimming="CharacterEllipsis"/>
+                                                            </Grid>
+                                                        </Border>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </Border>
+                                        <TextBlock x:Name="MeEmpty" Text="No Intel ME firmware detected." Classes="dim"/>
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+                            <Border Classes="card">
+                                <StackPanel Spacing="10">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <TextBlock Classes="h" Text="FLASH USAGE MAP"/>
+                                        <TextBlock Grid.Column="1" x:Name="BlockLegend" Classes="dim" FontSize="11.5"/>
+                                    </Grid>
+                                    <c:BlockMapView x:Name="BlockMapCtl"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Classes="card">
+                                <StackPanel Spacing="8">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <TextBlock x:Name="NvramTitle" Classes="h" Text="UEFI NVRAM VARIABLES"/>
+                                        <TextBox Grid.Column="1" x:Name="NvramFilter" Width="220" TextChanged="NvramFilter_TextChanged" Watermark="Filter name / GUID"/>
+                                    </Grid>
+                                    <DataGrid x:Name="NvramGrid" Height="260" DoubleTapped="NvramGrid_DoubleTapped">
+                                        <DataGrid.Columns>
+                                            <DataGridTextColumn Header="Offset" Binding="{Binding OffsetText}" Tag="mono"/>
+                                            <DataGridTextColumn Header="Format" Binding="{Binding Format}"/>
+                                            <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*"/>
+                                            <DataGridTextColumn Header="Size" Binding="{Binding DataSize}"/>
+                                            <DataGridTextColumn Header="State" Binding="{Binding State}"/>
+                                            <DataGridTextColumn Header="Data preview" Binding="{Binding Preview}" Tag="mono" Width="1.3*"/>
+                                        </DataGrid.Columns>
+                                    </DataGrid>
+                                </StackPanel>
+                            </Border>
+                            <Border Classes="card">
+                                <StackPanel Spacing="8">
+                                    <TextBlock Classes="h" Text="FULL TEXT REPORT"/>
+                                    <TextBox x:Name="ReportBox" Classes="code" Height="320" TextWrapping="NoWrap"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <!-- ==== 3 ASUS CAP TOOL ==== -->
+                    <ScrollViewer x:Name="PgCapsule" VerticalScrollBarVisibility="Auto" IsVisible="False">
+                        <Grid ColumnDefinitions="1.05*,12,1*">
+                            <StackPanel Spacing="12">
+                                <Border x:Name="CapDrop" Classes="card" BorderBrush="{DynamicResource LineStrong}">
+                                    <Grid ColumnDefinitions="Auto,*,Auto">
+                                        <Border Classes="tile" Width="46" Height="46"><ui:Ico Kind="box" Width="24" Height="24" Brush="{DynamicResource Accent}"/></Border>
+                                        <StackPanel Grid.Column="1" Margin="14,0" VerticalAlignment="Center">
+                                            <TextBlock x:Name="CapTitle" Text="No capsule loaded" Classes="h2" TextWrapping="Wrap"/>
+                                            <TextBlock Classes="hint" Text="Open an ASUS .CAP (or any AMI Aptio / UEFI capsule) — or drop it anywhere on the window."/>
+                                        </StackPanel>
+                                        <Button Grid.Column="2" Classes="accent" Click="CapOpen_Click">
+                                            <StackPanel Orientation="Horizontal" Spacing="7"><ui:Ico Kind="open"/><TextBlock Text="Open .CAP…"/></StackPanel>
+                                        </Button>
+                                    </Grid>
+                                </Border>
+                                <Border Classes="card">
+                                    <StackPanel Spacing="8">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <TextBlock Classes="h" Text="CAPSULE STRUCTURE"/>
+                                            <Border Grid.Column="1" x:Name="CapPill" Classes="pill"><TextBlock x:Name="CapPillText" Text="—" Foreground="{DynamicResource TxtDim}"/></Border>
+                                        </Grid>
+                                        <Border Classes="inset" Padding="0">
+                                            <ItemsControl x:Name="CapRows">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Border BorderBrush="{DynamicResource Line}" BorderThickness="0,0,0,1" Padding="12,6">
+                                                            <Grid ColumnDefinitions="150,*">
+                                                                <TextBlock Text="{Binding Key}" Classes="dim" FontSize="12"/>
+                                                                <TextBlock Grid.Column="1" Text="{Binding Value}" Classes="mono" FontSize="12" TextWrapping="Wrap"/>
+                                                            </Grid>
+                                                        </Border>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </Border>
+                                        <ItemsControl x:Name="CapWarnings">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Border Background="{DynamicResource WarnBg}" CornerRadius="8" Padding="10,7" Margin="0,4,0,0">
+                                                        <Grid ColumnDefinitions="Auto,*">
+                                                            <ui:Ico Kind="warn" Brush="{DynamicResource Warn}" Margin="0,0,8,0" VerticalAlignment="Top"/>
+                                                            <TextBlock Grid.Column="1" Text="{Binding}" TextWrapping="Wrap" FontSize="12" Foreground="{DynamicResource Warn}"/>
+                                                        </Grid>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="2" Spacing="12">
+                                <Border Classes="card">
+                                    <StackPanel Spacing="10">
+                                        <StackPanel Orientation="Horizontal" Spacing="8"><ui:Ico Kind="export" Brush="{DynamicResource Accent}"/><TextBlock Classes="h" Text="EXTRACT FLASH IMAGE"/></StackPanel>
+                                        <TextBlock Classes="hint" Text="Strips the capsule header (normally 2 KB on ASUS boards) and any signature trailer, leaving the raw SPI image a CH341A can program."/>
+                                        <TextBlock x:Name="CapSizeCheck" Text="—" TextWrapping="Wrap" FontSize="12.5"/>
+                                        <WrapPanel>
+                                            <Button Classes="accent" Margin="0,0,8,8" Click="CapLoad_Click">
+                                                <StackPanel Orientation="Horizontal" Spacing="7"><ui:Ico Kind="read"/><TextBlock Text="Load image into buffer"/></StackPanel>
+                                            </Button>
+                                            <Button Margin="0,0,8,8" Click="CapSave_Click">
+                                                <StackPanel Orientation="Horizontal" Spacing="7"><ui:Ico Kind="save"/><TextBlock Text="Save as .bin…"/></StackPanel>
+                                            </Button>
+                                            <Button Margin="0,0,8,8" Click="RepUseCap_Click">
+                                                <StackPanel Orientation="Horizontal" Spacing="7"><ui:Ico Kind="merge"/><TextBlock Text="Use in Repair Tools"/></StackPanel>
+                                            </Button>
+                                        </WrapPanel>
+                                    </StackPanel>
+                                </Border>
+                                <Border Classes="card">
+                                    <StackPanel Spacing="10">
+                                        <StackPanel Orientation="Horizontal" Spacing="8"><ui:Ico Kind="merge" Brush="{DynamicResource Info}"/><TextBlock Classes="h" Text="MERGE WITH ORIGINAL CHIP DUMP"/></StackPanel>
+                                        <TextBlock Classes="hint" Text="Flashing a stock .CAP over a whole chip wipes the board's own data. Read the chip first (it becomes the buffer), then keep the regions you tick from that dump — by default the GbE region with the board's MAC address."/>
+                                        <WrapPanel>
+                                            <Button Margin="0,0,8,8" Click="CapPlan_Click">
+                                                <StackPanel Orientation="Horizontal" Spacing="7"><ui:Ico Kind="compare"/><TextBlock Text="Compare with buffer"/></StackPanel>
+                                            </Button>
+                                        </WrapPanel>
+                                        <TextBlock x:Name="CapMergeInfo" Text="Load a capsule and read/open the original dump to plan a merge." Classes="hint"/>
+                                        <DataGrid x:Name="CapMergeGrid" Height="200" IsReadOnly="False">
+                                            <DataGrid.Columns>
+                                                <DataGridCheckBoxColumn Header="Keep" Binding="{Binding KeepFromDump}" Width="84"/>
+                                                <DataGridTextColumn Header="Region" Binding="{Binding Name}" IsReadOnly="True"/>
+                                                <DataGridTextColumn Header="Range" Binding="{Binding RangeText}" IsReadOnly="True" Tag="mono"/>
+                                                <DataGridTextColumn Header="Size" Binding="{Binding SizeText}" IsReadOnly="True"/>
+                                                <DataGridTextColumn Header="Capsule vs dump" Binding="{Binding Compare}" IsReadOnly="True"/>
+                                                <DataGridTextColumn Header="Note" Binding="{Binding Hint}" IsReadOnly="True" Width="*"/>
+                                            </DataGrid.Columns>
+                                        </DataGrid>
+                                        <WrapPanel>
+                                            <Button Classes="accent" Margin="0,0,8,8" Click="CapMerge_Click">
+                                                <StackPanel Orientation="Horizontal" Spacing="7"><ui:Ico Kind="merge"/><TextBlock Text="Build merged image → buffer"/></StackPanel>
+                                            </Button>
+                                        </WrapPanel>
+                                    </StackPanel>
+                                </Border>
+                                <Border Classes="card">
+                                    <StackPanel Spacing="6">
+                                        <StackPanel Orientation="Horizontal" Spacing="8"><ui:Ico Kind="info" Brush="{DynamicResource TxtDim}"/><TextBlock Classes="h" Text="ASUS NOTES"/></StackPanel>
+                                        <TextBlock Classes="hint" Text="• File names like PRIME-B450M-A-ASUS-3211.CAP give the board and BIOS version.&#x0a;• The serial number and UUID live in the BIOS region. After flashing a stock image, restore them with the vendor DMI tool, or merge the BIOS region from your dump if both BIOS versions match.&#x0a;• A capsule that holds only the BIOS region (no descriptor) must be merged into a full dump — it cannot be flashed alone.&#x0a;• USB BIOS FlashBack needs the original .CAP with its header. Only strip the header for CH341A programming."/>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </Grid>
+                    </ScrollViewer>
+
+                    <!-- ==== 4 REPAIR TOOLS ==== -->
+                    <ScrollViewer x:Name="PgRepair" VerticalScrollBarVisibility="Auto" IsVisible="False">
+                        <Grid ColumnDefinitions="1*,12,1.25*">
+                            <StackPanel Spacing="12">
+                                <Border Classes="card">
+                                    <StackPanel Spacing="10">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <StackPanel Orientation="Horizontal" Spacing="8"><ui:Ico Kind="tune" Brush="{DynamicResource Accent}"/><TextBlock Classes="h" Text="QUICK FIXES (BUFFER)"/></StackPanel>
+                                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
+                                                <Button Classes="small" Click="RepRefresh_Click" ToolTip.Tip="Rescan the buffer"><ui:Ico Kind="refresh" Width="14" Height="14"/></Button>
+                                                <Button x:Name="RepUndoBtn" Classes="small" IsEnabled="False" Click="RepUndo_Click"><StackPanel Orientation="Horizontal" Spacing="6"><ui:Ico Kind="refresh" Width="14" Height="14"/><TextBlock Text="Undo last change"/></StackPanel></Button>
+                                            </StackPanel>
+                                        </Grid>
+
+                                        <Border Classes="inset" Padding="12,10">
+                                            <Grid ColumnDefinitions="*,Auto">
+                                                <StackPanel Spacing="2" Margin="0,0,10,0">
+                                                    <TextBlock Text="Clear NVRAM" FontWeight="SemiBold"/>
+                                                    <TextBlock x:Name="RepNvramInfo" Classes="hint" Text="—"/>
+                                                </StackPanel>
+                                                <Button Grid.Column="1" Click="RepClearNvram_Click"><StackPanel Orientation="Horizontal" Spacing="6"><ui:Ico Kind="erase" Width="14" Height="14"/><TextBlock Text="Clear…"/></StackPanel></Button>
+                                            </Grid>
+                                        </Border>
+                                        <Border Classes="inset" Padding="12,10">
+                                            <Grid ColumnDefinitions="*,Auto">
+                                                <StackPanel Spacing="2" Margin="0,0,10,0">
+                                                    <TextBlock Text="Clean ME region" FontWeight="SemiBold"/>
+                                                    <TextBlock x:Name="RepMeInfo" Classes="hint" Text="—"/>
+                                                </StackPanel>
+                                                <Button Grid.Column="1" x:Name="RepMeBtn" Click="RepCleanMe_Click"><StackPanel Orientation="Horizontal" Spacing="6"><ui:Ico Kind="layers" Width="14" Height="14"/><TextBlock Text="Clean…"/></StackPanel></Button>
+                                            </Grid>
+                                        </Border>
+                                        <Border Classes="inset" Padding="12,10">
+                                            <StackPanel Spacing="6">
+                                                <TextBlock Text="GbE MAC address" FontWeight="SemiBold"/>
+                                                <Grid ColumnDefinitions="*,Auto">
+                                                    <TextBox x:Name="RepMacBox" Watermark="02:11:22:33:44:55" Margin="0,0,8,0"/>
+                                                    <Button Grid.Column="1" Click="RepSetMac_Click"><StackPanel Orientation="Horizontal" Spacing="6"><ui:Ico Kind="write" Width="14" Height="14"/><TextBlock Text="Set MAC"/></StackPanel></Button>
+                                                </Grid>
+                                                <TextBlock x:Name="RepMacInfo" Classes="hint" Text="—"/>
+                                            </StackPanel>
+                                        </Border>
+                                        <Border Classes="inset" Padding="12,10">
+                                            <Grid ColumnDefinitions="*,Auto">
+                                                <StackPanel Spacing="2" Margin="0,0,10,0">
+                                                    <TextBlock Text="Flash descriptor access" FontWeight="SemiBold"/>
+                                                    <TextBlock x:Name="RepFdInfo" Classes="hint" Text="—"/>
+                                                </StackPanel>
+                                                <Button Grid.Column="1" Click="UnlockIfd_Click"><StackPanel Orientation="Horizontal" Spacing="6"><ui:Ico Kind="unlock" Width="14" Height="14"/><TextBlock Text="Unlock…"/></StackPanel></Button>
+                                            </Grid>
+                                        </Border>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Classes="card">
+                                    <StackPanel Spacing="10">
+                                        <StackPanel Orientation="Horizontal" Spacing="8"><ui:Ico Kind="hex" Brush="{DynamicResource Info}"/><TextBlock Classes="h" Text="BINARY TOOLS · EC FIRMWARE, SPLIT, RESIZE"/></StackPanel>
+                                        <Grid ColumnDefinitions="Auto,*,12,Auto,*" RowDefinitions="Auto,6,Auto">
+                                            <TextBlock Classes="dim" Text="Offset" Margin="0,0,8,0"/>
+                                            <TextBox Grid.Column="1" x:Name="BinOffset" Text="0x0"/>
+                                            <TextBlock Grid.Column="3" Classes="dim" Text="Length" Margin="0,0,8,0"/>
+                                            <TextBox Grid.Column="4" x:Name="BinLength" Text="0x20000"/>
+                                            <TextBlock Grid.Row="2" Classes="dim" Text="New size" Margin="0,0,8,0"/>
+                                            <ComboBox Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="4" x:Name="BinSize" HorizontalAlignment="Stretch" SelectedIndex="3">
+                                                <ComboBoxItem Content="64 KB" Tag="65536"/>
+                                                <ComboBoxItem Content="128 KB" Tag="131072"/>
+                                                <ComboBoxItem Content="256 KB" Tag="262144"/>
+                                                <ComboBoxItem Content="Selected chip size" Tag="chip"/>
+                                                <ComboBoxItem Content="Offset field value" Tag="offset"/>
+                                            </ComboBox>
+                                        </Grid>
+                                        <WrapPanel>
+                                            <Button Margin="0,0,6,6" Click="BinExtract_Click"><StackPanel Orientation="Horizontal" Spacing="6"><ui:Ico Kind="export" Width="14" Height="14"/><TextBlock Text="Extract range…"/></StackPanel></Button>
+                                            <Button Margin="0,0,6,6" Click="BinSplit_Click"><StackPanel Orientation="Horizontal" Spacing="6"><ui:Ico Kind="compare" Width="14" Height="14"/><TextBlock Text="Split at offset…"/></StackPanel></Button>
+                                            <Button Margin="0,0,6,6" Click="BinResize_Click"><StackPanel Orientation="Horizontal" Spacing="6"><ui:Ico Kind="box" Width="14" Height="14"/><TextBlock Text="Resize buffer"/></StackPanel></Button>
+                                            <Button Margin="0,0,6,6" Click="BinAppend_Click"><StackPanel Orientation="Horizontal" Spacing="6"><ui:Ico Kind="merge" Width="14" Height="14"/><TextBlock Text="Append file…"/></StackPanel></Button>
+                                        </WrapPanel>
+                                        <TextBlock Classes="hint" Text="Offsets are hex (0x…), or decimal with a K/M suffix. Split the system BIOS from the EC firmware, cut an EC image out of a full dump, or pad an EC image with 0xFF to its chip size."/>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="2" Spacing="12">
+                                <Border Classes="card">
+                                    <StackPanel Spacing="10">
+                                        <StackPanel Orientation="Horizontal" Spacing="8"><ui:Ico Kind="file" Brush="{DynamicResource Warn}"/><TextBlock Classes="h" Text="STOCK FIRMWARE · DONOR IMAGE"/></StackPanel>
+                                        <TextBlock Classes="hint" Text="The buffer is your original dump. Load the vendor's stock image (a .bin, .cap, or a BIOS update — it is unpacked automatically), then choose what to take from each."/>
+                                        <WrapPanel>
+                                            <Button Classes="accent" Margin="0,0,8,6" Click="RepLoadStock_Click"><StackPanel Orientation="Horizontal" Spacing="7"><ui:Ico Kind="open"/><TextBlock Text="Load stock image…"/></StackPanel></Button>
+                                            <Button Margin="0,0,8,6" Click="RepUseCap_Click"><StackPanel Orientation="Horizontal" Spacing="7"><ui:Ico Kind="box"/><TextBlock Text="Use CAP Tool image"/></StackPanel></Button>
+                                            <Button Margin="0,0,8,6" Click="RepPlan_Click"><StackPanel Orientation="Horizontal" Spacing="7"><ui:Ico Kind="compare"/><TextBlock Text="Compare with buffer"/></StackPanel></Button>
+                                        </WrapPanel>
+                                        <TextBlock x:Name="RepStockInfo" Text="No stock image loaded." TextWrapping="Wrap" FontSize="12.5"/>
+                                    </StackPanel>
+                                </Border>
+                                <Border Classes="card">
+                                    <StackPanel Spacing="10">
+                                        <StackPanel Orientation="Horizontal" Spacing="8"><ui:Ico Kind="merge" Brush="{DynamicResource Info}"/><TextBlock Classes="h" Text="REGION MERGE · RESULT = STOCK + TICKED REGIONS FROM YOUR DUMP"/></StackPanel>
+                                        <WrapPanel>
+                                            <Button Classes="small" Margin="0,0,6,6" Tag="bios" Click="RepPreset_Click" ToolTip.Tip="Stock BIOS region, everything else from your dump">Repair BIOS region</Button>
+                                            <Button Classes="small" Margin="0,0,6,6" Tag="fd" Click="RepPreset_Click" ToolTip.Tip="Stock descriptor, everything else from your dump">Repair descriptor</Button>
+                                            <Button Classes="small" Margin="0,0,6,6" Tag="me" Click="RepPreset_Click" ToolTip.Tip="Clean stock ME region, everything else from your dump">Replace ME</Button>
+                                            <Button Classes="small" Margin="0,0,6,6" Tag="stock" Click="RepPreset_Click" ToolTip.Tip="Whole stock image, keep only GbE / EC / platform data from your dump">Full stock, keep board data</Button>
+                                        </WrapPanel>
+                                        <DataGrid x:Name="RepMergeGrid" Height="190" IsReadOnly="False">
+                                            <DataGrid.Columns>
+                                                <DataGridCheckBoxColumn Header="Keep dump" Binding="{Binding KeepFromDump}" Width="116"/>
+                                                <DataGridTextColumn Header="Region" Binding="{Binding Name}" IsReadOnly="True"/>
+                                                <DataGridTextColumn Header="Range" Binding="{Binding RangeText}" IsReadOnly="True" Tag="mono"/>
+                                                <DataGridTextColumn Header="Size" Binding="{Binding SizeText}" IsReadOnly="True"/>
+                                                <DataGridTextColumn Header="Stock vs dump" Binding="{Binding Compare}" IsReadOnly="True"/>
+                                                <DataGridTextColumn Header="Note" Binding="{Binding Hint}" IsReadOnly="True" Width="*"/>
+                                            </DataGrid.Columns>
+                                        </DataGrid>
+                                    </StackPanel>
+                                </Border>
+                                <Border Classes="card">
+                                    <StackPanel Spacing="10">
+                                        <StackPanel Orientation="Horizontal" Spacing="8"><ui:Ico Kind="key" Brush="{DynamicResource Good}"/><TextBlock Classes="h" Text="IDENTITY TRANSFER · FROM YOUR DUMP INTO THE RESULT"/></StackPanel>
+                                        <DataGrid x:Name="RepIdGrid" Height="170" IsReadOnly="False">
+                                            <DataGrid.Columns>
+                                                <DataGridCheckBoxColumn Header="Transfer" Binding="{Binding Transfer}" Width="86"/>
+                                                <DataGridTextColumn Header="Item" Binding="{Binding Kind}" IsReadOnly="True"/>
+                                                <DataGridTextColumn Header="Value" Binding="{Binding Detail}" IsReadOnly="True" Tag="mono"/>
+                                                <DataGridTextColumn Header="Location" Binding="{Binding OffsetText}" IsReadOnly="True" Tag="mono"/>
+                                                <DataGridTextColumn Header="Status" Binding="{Binding Status}" IsReadOnly="True" Width="*"/>
+                                            </DataGrid.Columns>
+                                        </DataGrid>
+                                        <TextBlock Classes="hint" Text="Identity data is copied only from this board's own dump into matching locations; items the stock image cannot hold safely are listed but not transferred."/>
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <TextBlock x:Name="RepResultInfo" Classes="hint" Text="Load a stock image and compare to build a repair plan."/>
+                                            <Button Grid.Column="1" Classes="accent" Margin="10,0,0,0" Click="RepBuild_Click"><StackPanel Orientation="Horizontal" Spacing="7"><ui:Ico Kind="auto"/><TextBlock Text="Build repaired image → buffer"/></StackPanel></Button>
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </Grid>
+                    </ScrollViewer>
+
+                    <!-- ==== 5 UPDATE EXTRACTOR ==== -->
+                    <ScrollViewer x:Name="PgExtract" VerticalScrollBarVisibility="Auto" IsVisible="False">
+                        <StackPanel Spacing="12">
+                            <Border Classes="card" BorderBrush="{DynamicResource LineStrong}">
+                                <Grid ColumnDefinitions="Auto,*,Auto">
+                                    <Border Classes="tile" Width="46" Height="46"><ui:Ico Kind="layers" Width="24" Height="24" Brush="{DynamicResource Accent}"/></Border>
+                                    <StackPanel Grid.Column="1" Margin="14,0" VerticalAlignment="Center">
+                                        <TextBlock x:Name="ExtTitle" Text="No update file opened" Classes="h2" TextWrapping="Wrap"/>
+                                        <TextBlock Classes="hint" Text="Open a vendor BIOS update (.exe, .zip, .cap, .bin, .fd, .rom, .fl1 …) to find the flashable images inside: full flash images, InsydeFlash BIOS/EC blocks, AMI/ASUS capsules and UEFI BIOS regions. You can also drop the file on this page."/>
+                                    </StackPanel>
+                                    <Button Grid.Column="2" Classes="accent" Click="ExtOpen_Click"><StackPanel Orientation="Horizontal" Spacing="7"><ui:Ico Kind="open"/><TextBlock Text="Open update…"/></StackPanel></Button>
+                                </Grid>
+                            </Border>
+                            <Border Classes="card">
+                                <StackPanel Spacing="10">
+                                    <TextBlock Classes="h" Text="IMAGES FOUND (BEST FIRST)"/>
+                                    <DataGrid x:Name="ExtGrid" Height="230" SelectionChanged="ExtGrid_SelectionChanged" DoubleTapped="ExtGrid_DoubleTapped">
+                                        <DataGrid.Columns>
+                                            <DataGridTextColumn Header="Type" Binding="{Binding Kind}" Width="250"/>
+                                            <DataGridTextColumn Header="Offset" Binding="{Binding OffsetText}" Tag="mono"/>
+                                            <DataGridTextColumn Header="Size" Binding="{Binding SizeText}"/>
+                                            <DataGridTextColumn Header="CRC32" Binding="{Binding Crc}" Tag="mono"/>
+                                            <DataGridTextColumn Header="Details" Binding="{Binding Detail}" Width="*"/>
+                                            <DataGridTextColumn Header="Source" Binding="{Binding Source}" Width="200"/>
+                                        </DataGrid.Columns>
+                                    </DataGrid>
+                                    <ItemsControl x:Name="ExtNotes">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border Background="{DynamicResource WarnBg}" CornerRadius="8" Padding="10,7" Margin="0,4,0,0">
+                                                    <Grid ColumnDefinitions="Auto,*">
+                                                        <ui:Ico Kind="warn" Brush="{DynamicResource Warn}" Margin="0,0,8,0" VerticalAlignment="Top"/>
+                                                        <TextBlock Grid.Column="1" Text="{Binding}" TextWrapping="Wrap" FontSize="12" Foreground="{DynamicResource Warn}"/>
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+                            <Border Classes="card">
+                                <StackPanel Spacing="10">
+                                    <TextBlock Classes="h" Text="SELECTED IMAGE"/>
+                                    <TextBlock x:Name="ExtSelInfo" Text="Select an image above." TextWrapping="Wrap" FontSize="12.5"/>
+                                    <WrapPanel>
+                                        <Button Classes="accent" Margin="0,0,8,6" Click="ExtLoad_Click"><StackPanel Orientation="Horizontal" Spacing="7"><ui:Ico Kind="read"/><TextBlock Text="Load into buffer"/></StackPanel></Button>
+                                        <Button Margin="0,0,8,6" Click="ExtSave_Click"><StackPanel Orientation="Horizontal" Spacing="7"><ui:Ico Kind="save"/><TextBlock Text="Save as…"/></StackPanel></Button>
+                                        <Button Margin="0,0,8,6" Click="ExtUseStock_Click"><StackPanel Orientation="Horizontal" Spacing="7"><ui:Ico Kind="merge"/><TextBlock Text="Use as stock image (Repair Tools)"/></StackPanel></Button>
+                                    </WrapPanel>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <!-- ==== 6 BOOT LOGO ==== -->
+                    <ScrollViewer x:Name="PgLogo" VerticalScrollBarVisibility="Auto" IsVisible="False">
+                        <Grid ColumnDefinitions="1*,12,1.35*">
+                            <StackPanel Spacing="12">
+                                <Border Classes="card">
+                                    <StackPanel Spacing="10">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <StackPanel Orientation="Horizontal" Spacing="8"><ui:Ico Kind="search" Brush="{DynamicResource Accent}"/><TextBlock Classes="h" Text="PICTURES IN THE FIRMWARE"/></StackPanel>
+                                            <Button Grid.Column="1" Classes="small" Click="LogoScan_Click"><StackPanel Orientation="Horizontal" Spacing="6"><ui:Ico Kind="refresh" Width="14" Height="14"/><TextBlock Text="Rescan"/></StackPanel></Button>
+                                        </Grid>
+                                        <Border x:Name="LogoProtBanner" CornerRadius="8" Padding="10,8" IsVisible="False" Background="{DynamicResource BadBg}">
+                                            <Grid ColumnDefinitions="Auto,*">
+                                                <ui:Ico x:Name="LogoProtIco" Kind="warn" Brush="{DynamicResource Bad}" Margin="0,0,8,0" VerticalAlignment="Top"/>
+                                                <TextBlock Grid.Column="1" x:Name="LogoProtText" TextWrapping="Wrap" FontSize="12" Foreground="{DynamicResource Bad}"/>
+                                            </Grid>
+                                        </Border>
+                                        <TextBlock x:Name="LogoEmpty" Classes="hint" Text="Read a chip or open a firmware image, then open this page to find its boot logo."/>
+                                        <ListBox x:Name="LogoList" Classes="cards" MaxHeight="520" Background="Transparent" SelectionChanged="LogoList_SelectionChanged">
+                                            <ListBox.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Grid ColumnDefinitions="Auto,*" Margin="0,4">
+                                                        <Border Width="112" Height="56" CornerRadius="6" Background="{DynamicResource InputBg}" BorderBrush="{DynamicResource Line}" BorderThickness="1" Margin="0,0,12,0" ClipToBounds="True">
+                                                            <Image Source="{Binding Thumb}" Stretch="Uniform" Margin="3"/>
+                                                        </Border>
+                                                        <StackPanel Grid.Column="1" Spacing="2">
+                                                            <TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="12.5" TextTrimming="CharacterEllipsis"/>
+                                                            <TextBlock Text="{Binding Where}" Classes="dim" FontSize="11.5" TextTrimming="CharacterEllipsis"/>
+                                                            <TextBlock Text="{Binding Status}" FontSize="11.5" Classes="logline" Classes.ok="{Binding Replaceable}" Classes.warn="{Binding NotReplaceable}" TextTrimming="CharacterEllipsis"/>
+                                                        </StackPanel>
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </ListBox.ItemTemplate>
+                                        </ListBox>
+                                    </StackPanel>
+                                </Border>
+                                <Border Classes="card">
+                                    <StackPanel Spacing="6">
+                                        <StackPanel Orientation="Horizontal" Spacing="8"><ui:Ico Kind="verify" Brush="{DynamicResource Good}"/><TextBlock Classes="h" Text="SAFETY NETS"/></StackPanel>
+                                        <TextBlock Classes="hint" Text="• Your picture is converted automatically to the original's format, resolution and colour depth — you cannot pick a wrong one.&#x0a;• JPEG is re-encoded as baseline (works with every UEFI decoder); quality is lowered automatically to fit.&#x0a;• The result must fit in the space of the original; it is decoded again before use.&#x0a;• After the change the firmware is re-parsed: checksums, LZMA volumes (exact-length streams), the new logo, and that nothing outside the logo's file changed.&#x0a;• Intel Boot Guard firmware is blocked by default; logos inside code modules or unsupported compression are export-only.&#x0a;• Only the buffer changes — Undo is available, and the original dump stays in your backups."/>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="2" Spacing="12">
+                                <Border Classes="card">
+                                    <StackPanel Spacing="10">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <StackPanel Orientation="Horizontal" Spacing="8"><ui:Ico Kind="file" Brush="{DynamicResource Info}"/><TextBlock Classes="h" Text="SELECTED PICTURE"/></StackPanel>
+                                            <Button Grid.Column="1" Classes="small" Click="LogoExport_Click"><StackPanel Orientation="Horizontal" Spacing="6"><ui:Ico Kind="export" Width="14" Height="14"/><TextBlock Text="Export…"/></StackPanel></Button>
+                                        </Grid>
+                                        <Border Classes="inset" Height="170" Padding="8">
+                                            <Image x:Name="LogoOrig" Stretch="Uniform"/>
+                                        </Border>
+                                        <TextBlock x:Name="LogoInfo" Classes="mono" FontSize="12" TextWrapping="Wrap" Text="—"/>
+                                    </StackPanel>
+                                </Border>
+                                <Border Classes="card">
+                                    <StackPanel Spacing="10">
+                                        <StackPanel Orientation="Horizontal" Spacing="8"><ui:Ico Kind="write" Brush="{DynamicResource Accent}"/><TextBlock Classes="h" Text="REPLACE WITH YOUR PICTURE"/></StackPanel>
+                                        <Grid ColumnDefinitions="Auto,*,Auto,*" RowDefinitions="Auto,8,Auto">
+                                            <Button Grid.ColumnSpan="2" x:Name="LogoPickBtn" Click="LogoPick_Click" HorizontalAlignment="Left"><StackPanel Orientation="Horizontal" Spacing="7"><ui:Ico Kind="open"/><TextBlock Text="Choose picture…"/></StackPanel></Button>
+                                            <TextBlock Grid.Column="2" Grid.ColumnSpan="2" x:Name="LogoNewName" Classes="dim" FontSize="12" Text="PNG, JPEG, BMP or GIF — any size" TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock Grid.Row="2" Classes="dim" Text="Fit" Margin="0,0,8,0"/>
+                                            <ComboBox Grid.Row="2" Grid.Column="1" x:Name="LogoFitBox" SelectedIndex="0" HorizontalAlignment="Stretch" Margin="0,0,12,0" SelectionChanged="LogoOption_Changed">
+                                                <ComboBoxItem Content="Fit (keep proportions)"/>
+                                                <ComboBoxItem Content="Fill (crop edges)"/>
+                                                <ComboBoxItem Content="Stretch"/>
+                                            </ComboBox>
+                                            <TextBlock Grid.Row="2" Grid.Column="2" Classes="dim" Text="Background" Margin="0,0,8,0"/>
+                                            <ComboBox Grid.Row="2" Grid.Column="3" x:Name="LogoBgBox" SelectedIndex="0" HorizontalAlignment="Stretch" SelectionChanged="LogoOption_Changed">
+                                                <ComboBoxItem Content="Original's corner colour"/>
+                                                <ComboBoxItem Content="Black"/>
+                                                <ComboBoxItem Content="White"/>
+                                            </ComboBox>
+                                        </Grid>
+                                        <Border Classes="inset" Height="170" Padding="8">
+                                            <Grid>
+                                                <Image x:Name="LogoNew" Stretch="Uniform"/>
+                                                <TextBlock x:Name="LogoNewHint" Classes="hint" HorizontalAlignment="Center" Text="The converted logo appears here"/>
+                                            </Grid>
+                                        </Border>
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <ProgressBar x:Name="LogoMeter" Maximum="1000" Margin="0,0,10,0"/>
+                                            <TextBlock Grid.Column="1" x:Name="LogoMeterText" Classes="mono dim" FontSize="12" Text="—"/>
+                                        </Grid>
+                                        <ItemsControl x:Name="LogoChecks">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding Text}" Classes="logline" Classes.ok="{Binding Ok}" Classes.err="{Binding Bad}" Margin="0,1"/>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                        <CheckBox x:Name="LogoOverride" IsVisible="False" IsCheckedChanged="LogoOverride_Changed"
+                                                  Content="I understand this firmware is verified at boot and the board may not start — allow the change anyway"/>
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <TextBlock x:Name="LogoResult" Classes="hint" Text=""/>
+                                            <Button Grid.Column="1" x:Name="LogoApplyBtn" Classes="accent" IsEnabled="False" Margin="10,0,0,0" Click="LogoApply_Click">
+                                                <StackPanel Orientation="Horizontal" Spacing="7"><ui:Ico Kind="auto"/><TextBlock Text="Apply to buffer"/></StackPanel>
+                                            </Button>
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </Grid>
+                    </ScrollViewer>
+
+                    <!-- ==== 7 CHIP FUNCTIONS ==== -->
+                    <Grid x:Name="PgChipFn" ColumnDefinitions="*,12,*" IsVisible="False">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <StackPanel Spacing="12">
+                                <Border Classes="card">
+                                    <StackPanel Spacing="8">
+                                        <TextBlock Classes="h" Text="STATUS REGISTERS"/>
+                                        <Grid ColumnDefinitions="Auto,Auto,*">
+                                            <StackPanel>
+                                                <TextBlock Classes="lbl" Text="SR1 (05h)"/>
+                                                <TextBlock Classes="lbl" Text="SR2 (35h)"/>
+                                                <TextBlock Classes="lbl" Text="SR3 (15h)"/>
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="1" Margin="0,0,16,0">
+                                                <TextBlock x:Name="Sr1Text" Classes="val" Text="--" Foreground="{DynamicResource Info}"/>
+                                                <TextBlock x:Name="Sr2Text" Classes="val" Text="--" Foreground="{DynamicResource Info}"/>
+                                                <TextBlock x:Name="Sr3Text" Classes="val" Text="--" Foreground="{DynamicResource Info}"/>
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="2">
+                                                <TextBlock x:Name="Sr1Bits" Classes="val" FontSize="11.5" Text="SRP SEC TB BP2 BP1 BP0 WEL BUSY"/>
+                                                <TextBlock x:Name="Sr2Bits" Classes="val" FontSize="11.5" Text="SUS CMP LB3 LB2 LB1 (R) QE SRL"/>
+                                                <TextBlock x:Name="ProtText" Classes="val" FontSize="11.5" Text=""/>
+                                            </StackPanel>
+                                        </Grid>
+                                        <WrapPanel>
+                                            <Button Margin="0,0,6,6" Click="ReadStatus_Click"><StackPanel Orientation="Horizontal" Spacing="6"><ui:Ico Kind="refresh" Width="14" Height="14"/><TextBlock Text="Read status"/></StackPanel></Button>
+                                            <Button Margin="0,0,6,6" Click="Unprotect_Click"><StackPanel Orientation="Horizontal" Spacing="6"><ui:Ico Kind="unlock" Width="14" Height="14"/><TextBlock Text="Remove protection"/></StackPanel></Button>
+                                            <TextBox x:Name="Sr1Write" Width="60" Text="00" Margin="0,0,6,6"/>
+                                            <Button Margin="0,0,6,6" Content="Write SR1" Click="WriteSr1_Click"/>
+                                        </WrapPanel>
+                                    </StackPanel>
+                                </Border>
+                                <Border Classes="card">
+                                    <StackPanel Spacing="8">
+                                        <TextBlock Classes="h" Text="IDENTIFICATION"/>
+                                        <WrapPanel>
+                                            <Button Margin="0,0,6,6" Content="JEDEC ID (9Fh)" Click="FnJedec_Click"/>
+                                            <Button Margin="0,0,6,6" Content="RES (ABh)" Click="FnRes_Click"/>
+                                            <Button Margin="0,0,6,6" Content="REMS (90h)" Click="FnRems_Click"/>
+                                            <Button Margin="0,0,6,6" Content="Unique ID (4Bh)" Click="FnUid_Click"/>
+                                            <Button Margin="0,0,6,6" Content="SFDP dump (5Ah)" Click="FnSfdp_Click"/>
+                                        </WrapPanel>
+                                    </StackPanel>
+                                </Border>
+                                <Border Classes="card">
+                                    <StackPanel Spacing="8">
+                                        <TextBlock Classes="h" Text="PARTIAL / RANGE OPERATIONS"/>
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <TextBlock Classes="dim" Text="Start"/>
+                                            <TextBox x:Name="RangeStart" Width="110" Text="0x00000000"/>
+                                            <TextBlock Classes="dim" Text="Length"/>
+                                            <TextBox x:Name="RangeLen" Width="110" Text="0x1000"/>
+                                            <Button Classes="small" Content="From selection" Click="RangeFromSel_Click"/>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <TextBlock Classes="dim" Text="Region"/>
+                                            <ComboBox x:Name="RegionPick" Width="300" SelectionChanged="RegionPick_SelectionChanged"/>
+                                        </StackPanel>
+                                        <WrapPanel>
+                                            <Button Margin="0,0,6,6" Click="RangeRead_Click"><StackPanel Orientation="Horizontal" Spacing="6"><ui:Ico Kind="read" Width="14" Height="14"/><TextBlock Text="Read range → buffer"/></StackPanel></Button>
+                                            <Button Margin="0,0,6,6" Click="RangeErase_Click"><StackPanel Orientation="Horizontal" Spacing="6"><ui:Ico Kind="erase" Width="14" Height="14"/><TextBlock Text="Erase range"/></StackPanel></Button>
+                                            <Button Margin="0,0,6,6" Click="RangeWrite_Click"><StackPanel Orientation="Horizontal" Spacing="6"><ui:Ico Kind="write" Width="14" Height="14"/><TextBlock Text="Write range from buffer"/></StackPanel></Button>
+                                            <Button Margin="0,0,6,6" Click="RangeVerify_Click"><StackPanel Orientation="Horizontal" Spacing="6"><ui:Ico Kind="verify" Width="14" Height="14"/><TextBlock Text="Verify range"/></StackPanel></Button>
+                                        </WrapPanel>
+                                        <TextBlock Classes="hint" Text="Range writes use smart sector programming (only the 4 KB sectors that differ are erased). Pick a descriptor region to flash just the BIOS or ME without touching the rest of the chip."/>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </ScrollViewer>
+                        <Border Grid.Column="2" Classes="card">
+                            <DockPanel>
+                                <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,8">
+                                    <TextBlock Classes="h" Text="FUNCTION OUTPUT"/>
+                                    <Button Grid.Column="1" Classes="small" Content="Clear" Click="FnClear_Click"/>
+                                </Grid>
+                                <TextBox x:Name="FuncOut" Classes="code" TextWrapping="NoWrap"/>
+                            </DockPanel>
+                        </Border>
+                    </Grid>
+
+                    <!-- ==== 8 DATABASE ==== -->
+                    <Border x:Name="PgDatabase" Classes="card" IsVisible="False">
+                        <DockPanel>
+                            <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,10">
+                                <TextBlock x:Name="DbCount" Classes="dim" Text=""/>
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                                    <TextBox x:Name="DbSearch" Width="260" TextChanged="DbSearch_TextChanged" Watermark="Search name, vendor or JEDEC ID"/>
+                                    <Button Classes="accent" Click="UseChip_Click"><StackPanel Orientation="Horizontal" Spacing="7"><ui:Ico Kind="check"/><TextBlock Text="Use selected chip"/></StackPanel></Button>
+                                </StackPanel>
+                            </Grid>
+                            <DataGrid x:Name="DbGrid" DoubleTapped="DbGrid_DoubleTapped">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Manufacturer" Binding="{Binding Manufacturer}" Width="130"/>
+                                    <DataGridTextColumn Header="Part number" Binding="{Binding Name}" Width="*"/>
+                                    <DataGridTextColumn Header="JEDEC ID" Binding="{Binding JedecText}" Width="95" Tag="mono"/>
+                                    <DataGridTextColumn Header="Size" Binding="{Binding SizeText}" Width="85"/>
+                                    <DataGridTextColumn Header="Page" Binding="{Binding PageSize}" Width="65"/>
+                                    <DataGridTextColumn Header="Voltage" Binding="{Binding Voltage}" Width="85"/>
+                                    <DataGridTextColumn Header="Type" Binding="{Binding Kind}" Width="90"/>
+                                    <DataGridTextColumn Header="Notes" Binding="{Binding Notes}" Width="1.2*"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </DockPanel>
+                    </Border>
+
+                    <!-- ==== 9 PINOUT ==== -->
+                    <ScrollViewer x:Name="PgPinout" VerticalScrollBarVisibility="Auto" IsVisible="False">
+                        <StackPanel Spacing="12">
+                            <WrapPanel x:Name="PinoutPanel"/>
+                            <Border Classes="card">
+                                <StackPanel Spacing="8">
+                                    <TextBlock Classes="h" Text="CH341A WIRING &amp; SAFETY NOTES"/>
+                                    <TextBlock x:Name="RefText" TextWrapping="Wrap" LineHeight="21" FontSize="12.5"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <!-- ==== 10 HISTORY ==== -->
+                    <Border x:Name="PgHistory" Classes="card" IsVisible="False">
+                        <DockPanel>
+                            <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,0,0,10">
+                                <Button Click="HistExport_Click"><StackPanel Orientation="Horizontal" Spacing="7"><ui:Ico Kind="export"/><TextBlock Text="Export CSV"/></StackPanel></Button>
+                                <Button Click="HistClear_Click"><StackPanel Orientation="Horizontal" Spacing="7"><ui:Ico Kind="erase"/><TextBlock Text="Clear"/></StackPanel></Button>
+                            </StackPanel>
+                            <DataGrid x:Name="HistGrid">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Time" Binding="{Binding TimeText}" Width="150"/>
+                                    <DataGridTextColumn Header="Operation" Binding="{Binding Operation}" Width="130"/>
+                                    <DataGridTextColumn Header="Chip" Binding="{Binding Chip}" Width="170"/>
+                                    <DataGridTextColumn Header="Result" Binding="{Binding Result}" Width="85"/>
+                                    <DataGridTextColumn Header="Duration" Binding="{Binding Duration}" Width="80"/>
+                                    <DataGridTextColumn Header="Size" Binding="{Binding Size}" Width="80"/>
+                                    <DataGridTextColumn Header="CRC32" Binding="{Binding Crc32}" Width="90" Tag="mono"/>
+                                    <DataGridTextColumn Header="Details" Binding="{Binding Details}" Width="*"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </DockPanel>
+                    </Border>
+
+                    <!-- ==== 11 SETTINGS ==== -->
+                    <ScrollViewer x:Name="PgSettings" VerticalScrollBarVisibility="Auto" IsVisible="False">
+                        <Grid ColumnDefinitions="*,12,*">
+                            <Border Classes="card" VerticalAlignment="Top">
+                                <StackPanel Spacing="4">
+                                    <TextBlock Classes="h" Text="PROGRAMMING" Margin="0,0,0,6"/>
+                                    <CheckBox x:Name="SetVerify" Content="Verify after programming"/>
+                                    <CheckBox x:Name="SetSmart" Content="Smart program (only erase/write sectors that changed)"/>
+                                    <CheckBox x:Name="SetUnprotect" Content="Remove block protection before erase/program"/>
+                                    <CheckBox x:Name="SetSkipBlank" Content="Skip blank (0xFF) pages when programming"/>
+                                    <CheckBox x:Name="Set4Byte" Content="Use 4-byte address mode for chips &gt; 16 MB"/>
+                                    <CheckBox x:Name="SetConfirm" Content="Ask before destructive operations"/>
+                                    <Grid ColumnDefinitions="120,*" Margin="0,10,0,0">
+                                        <TextBlock Classes="dim" Text="Erase method"/>
+                                        <ComboBox Grid.Column="1" x:Name="SetEraseMode" HorizontalAlignment="Stretch">
+                                            <ComboBoxItem Content="Chip erase (C7h)" Tag="Chip"/>
+                                            <ComboBoxItem Content="64 KB block erase (D8h)" Tag="Block"/>
+                                            <ComboBoxItem Content="4 KB sector erase (20h)" Tag="Sector"/>
+                                        </ComboBox>
+                                    </Grid>
+                                    <Grid ColumnDefinitions="120,*" Margin="0,8,0,0">
+                                        <TextBlock Classes="dim" Text="Stream speed"/>
+                                        <ComboBox Grid.Column="1" x:Name="SetSpeed" HorizontalAlignment="Stretch">
+                                            <ComboBoxItem Content="0 – Low (20 kHz I²C)"/>
+                                            <ComboBoxItem Content="1 – Standard (100 kHz I²C)"/>
+                                            <ComboBoxItem Content="2 – Fast (400 kHz I²C)"/>
+                                            <ComboBoxItem Content="3 – High (750 kHz I²C)"/>
+                                        </ComboBox>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+                            <Border Grid.Column="2" Classes="card" VerticalAlignment="Top">
+                                <StackPanel Spacing="4">
+                                    <TextBlock Classes="h" Text="READING &amp; BACKUP" Margin="0,0,0,6"/>
+                                    <CheckBox x:Name="SetDoubleRead" Content="Read chip twice and compare (detects bad clip contact)"/>
+                                    <CheckBox x:Name="SetAutoAnalyze" Content="Analyze firmware automatically after read / open"/>
+                                    <CheckBox x:Name="SetAutoBackup" Content="Automatically save every chip read as a backup"/>
+                                    <TextBlock Classes="dim" Text="Backup folder" Margin="0,10,0,4"/>
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <TextBox x:Name="SetBackupFolder"/>
+                                        <Button Grid.Column="1" Margin="8,0,0,0" Content="Browse…" Click="BrowseBackup_Click"/>
+                                    </Grid>
+                                    <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,16,0,0">
+                                        <Button Classes="accent" Click="SaveSettings_Click"><StackPanel Orientation="Horizontal" Spacing="7"><ui:Ico Kind="save"/><TextBlock Text="Save settings"/></StackPanel></Button>
+                                        <Button Click="OpenBackupFolder_Click"><StackPanel Orientation="Horizontal" Spacing="7"><ui:Ico Kind="open"/><TextBlock Text="Open backup folder"/></StackPanel></Button>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+                    </ScrollViewer>
+
+                    <!-- ==== 12 DIAGNOSTICS ==== -->
+                    <Border x:Name="PgDiagnostics" Classes="card" IsVisible="False">
+                        <DockPanel>
+                            <WrapPanel DockPanel.Dock="Top" Margin="0,0,0,10">
+                                <Button Margin="0,0,8,8" Click="ScanUsb_Click"><StackPanel Orientation="Horizontal" Spacing="7"><ui:Ico Kind="usb"/><TextBlock Text="Scan USB devices"/></StackPanel></Button>
+                                <Button Margin="0,0,8,8" Click="DriverCheck_Click"><StackPanel Orientation="Horizontal" Spacing="7"><ui:Ico Kind="verify"/><TextBlock Text="Driver check"/></StackPanel></Button>
+                                <Button x:Name="UdevBtn" Margin="0,0,8,8" Click="InstallUdev_Click" IsVisible="False"><StackPanel Orientation="Horizontal" Spacing="7"><ui:Ico Kind="linux"/><TextBlock Text="Install udev rule"/></StackPanel></Button>
+                                <Button Margin="0,0,8,8" Click="Bench_Click"><StackPanel Orientation="Horizontal" Spacing="7"><ui:Ico Kind="bench"/><TextBlock Text="Read speed benchmark"/></StackPanel></Button>
+                                <Button Margin="0,0,8,8" Click="LoadDemo_Click"><StackPanel Orientation="Horizontal" Spacing="7"><ui:Ico Kind="file"/><TextBlock Text="Load demo image"/></StackPanel></Button>
+                                <Button Margin="0,0,8,8" Click="OpenDataFolder_Click"><StackPanel Orientation="Horizontal" Spacing="7"><ui:Ico Kind="open"/><TextBlock Text="Open data folder"/></StackPanel></Button>
+                            </WrapPanel>
+                            <TextBox x:Name="DiagOut" Classes="code" TextWrapping="Wrap"/>
+                        </DockPanel>
+                    </Border>
+                </Panel>
+
+                <GridSplitter x:Name="LogSplitter" Grid.Column="1" ResizeDirection="Columns"/>
+
+                <!-- activity log -->
+                <Border x:Name="LogPanel" Grid.Column="2" Classes="card" Padding="12,12,6,10">
+                    <DockPanel>
+                        <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,6,8">
+                            <StackPanel Orientation="Horizontal" Spacing="8"><ui:Ico Kind="log" Brush="{DynamicResource Accent}"/><TextBlock Classes="h" Text="ACTIVITY LOG"/></StackPanel>
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
+                                <Button Classes="small ghost" Click="SaveLog_Click" ToolTip.Tip="Save log"><ui:Ico Kind="save" Width="14" Height="14"/></Button>
+                                <Button Classes="small ghost" Click="ClearLog_Click" ToolTip.Tip="Clear log"><ui:Ico Kind="erase" Width="14" Height="14"/></Button>
+                            </StackPanel>
+                        </Grid>
+                        <TextBlock x:Name="LogCount" DockPanel.Dock="Bottom" Classes="dim" FontSize="11" Margin="0,6,0,0" Text="0 events"/>
+                        <ListBox x:Name="LogList" Classes="log" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Classes="logline" Classes.ok="{Binding IsOk}" Classes.warn="{Binding IsWarn}" Classes.err="{Binding IsError}" Classes.acc="{Binding IsAccent}">
+                                        <Run Text="{Binding TimeText, Mode=OneWay}" Foreground="{DynamicResource TxtFaint}"/>
+                                        <Run Text=" "/>
+                                        <Run Text="{Binding CategoryText, Mode=OneWay}" FontWeight="Bold"/>
+                                        <Run Text=" "/>
+                                        <Run Text="{Binding Message, Mode=OneWay}"/>
+                                    </TextBlock>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </DockPanel>
+                </Border>
+            </Grid>
+        </Grid>
+
+        <!-- ======================= STATUS BAR ======================= -->
+        <Border Grid.Row="1" Grid.Column="1" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="20,6">
+            <Grid ColumnDefinitions="*,Auto,*">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Ellipse x:Name="StatusDot" Width="8" Height="8" Fill="{DynamicResource Good}"/>
+                    <TextBlock x:Name="StatusText" Text="Ready" Classes="dim" FontSize="12" TextTrimming="CharacterEllipsis"/>
+                </StackPanel>
+                <TextBlock Grid.Column="1" x:Name="StatusTarget" Classes="mono" FontSize="12" Foreground="{DynamicResource Accent}" Text="CH341A · SPI"/>
+                <TextBlock Grid.Column="2" HorizontalAlignment="Right" Classes="dim" FontSize="12" Text="F5 Detect · F6 Read · F9 Program · F8 Auto · Ctrl+O Open"/>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

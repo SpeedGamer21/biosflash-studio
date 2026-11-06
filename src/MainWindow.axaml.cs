@@ -111,6 +111,7 @@ public partial class MainWindow : Window
         PlatformText.Text = PlatformUtil.OsName;
         UdevBtn.IsVisible = OperatingSystem.IsLinux();
         SetLogVisible(_set.ShowLog);
+        SetDetailsVisible(_set.ShowDetails);
 
         FillChipList();
         var last = ChipDatabase.SpiChips.FirstOrDefault(c => c.Display == _set.LastChip);
@@ -216,8 +217,22 @@ public partial class MainWindow : Window
     {
         LogPanel.IsVisible = show;
         LogSplitter.IsVisible = show;
-        WorkGrid.ColumnDefinitions[1].Width = new GridLength(show ? 12 : 0);
-        WorkGrid.ColumnDefinitions[2].Width = show ? new GridLength(380) : new GridLength(0);
+        LogToggle.IsChecked = show;
+        WorkGrid.ColumnDefinitions[1].Width = new GridLength(show ? 16 : 0);
+        WorkGrid.ColumnDefinitions[2].Width = show ? new GridLength(340) : new GridLength(0);
+    }
+
+    void DetailsToggle_Click(object sender, RoutedEventArgs e)
+    {
+        _set.ShowDetails = DetailsToggle.IsChecked == true;
+        SetDetailsVisible(_set.ShowDetails);
+    }
+
+    /// <summary>Status cards show only their headline unless details are switched on.</summary>
+    void SetDetailsVisible(bool show)
+    {
+        HwDetails.IsVisible = ChipDetails.IsVisible = BufDetails.IsVisible = show;
+        DetailsToggle.IsChecked = show;
     }
 
     // =====================================================================  dialogs / pickers

@@ -22,7 +22,8 @@ public sealed class AppSettings
     public bool DarkTheme { get; set; } = true;
     public string LastChip { get; set; } = "";
     public string LastFolder { get; set; } = "";
-    public bool ShowLog { get; set; } = true;
+    public bool ShowLog { get; set; } = false;
+    public bool ShowDetails { get; set; } = false;
 
     public static string Dir => Path.Combine(Special(Environment.SpecialFolder.ApplicationData, ".config"), "BiosFlashStudio");
     public static string DefaultBackupFolder => Path.Combine(Special(Environment.SpecialFolder.MyDocuments, "Documents"), "BiosFlash Studio", "Backups");

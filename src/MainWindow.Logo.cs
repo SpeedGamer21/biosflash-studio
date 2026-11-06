@@ -95,6 +95,9 @@ public partial class MainWindow
     {
         var l = LogoSel;
         LogoOrig.Source = (LogoList.SelectedItem as LogoItem)?.Thumb;
+        LogoPickBtn.IsEnabled = l?.Replaceable == true;
+        LogoPickWhy.IsVisible = l != null && !l.Replaceable;
+        LogoPickWhy.Text = l == null ? "" : "This picture can't be replaced: " + l.Reason + (_logos.Count(x => x.Replaceable) > 0 ? " Select one marked ✓ in the list." : "");
         if (l == null)
         {
             LogoInfo.Text = "—";
@@ -108,7 +111,6 @@ public partial class MainWindow
             $"{(l.Compressed ? "inside an LZMA-compressed volume" : "stored uncompressed")} · {l.Location}\n" +
             (c != null ? $"path: {Uefi.Describe(c)}\n" : "") +
             (l.Replaceable ? "✓ can be replaced" : "✗ " + l.Reason);
-        LogoPickBtn.IsEnabled = l.Replaceable;
         _ = LogoReconvertAsync();
     }
 
