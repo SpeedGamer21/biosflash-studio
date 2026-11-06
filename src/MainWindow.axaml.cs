@@ -47,6 +47,7 @@ public partial class MainWindow : Window
         ("ASUS CAP Tool", "Turn ASUS / AMI capsules into programmable images and merge them with your dump"),
         ("Repair Tools", "Clear NVRAM, clean ME, fix the MAC, repair regions from stock firmware and keep the board identity"),
         ("Update Extractor", "Pull flashable images out of vendor BIOS updates (InsydeFlash, capsules, ZIP, UEFI volumes)"),
+        ("Boot Logo", "Find, export and safely replace the boot logo — uncompressed or inside LZMA-compressed volumes"),
         ("Chip Functions", "Status registers, identification and partial operations"),
         ("Chip Database", "Supported SPI flash and I²C EEPROM profiles"),
         ("Pinout & Wiring", "SOIC-8 pinouts and CH341A safety notes"),
@@ -64,7 +65,7 @@ public partial class MainWindow : Window
         var ico = AppIcon.Create();
         if (ico != null) Icon = ico;
 
-        _pages = new Control[] { PgOverview, PgHex, PgAnalysis, PgCapsule, PgRepair, PgExtract, PgChipFn, PgDatabase, PgPinout, PgHistory, PgSettings, PgDiagnostics };
+        _pages = new Control[] { PgOverview, PgHex, PgAnalysis, PgCapsule, PgRepair, PgExtract, PgLogo, PgChipFn, PgDatabase, PgPinout, PgHistory, PgSettings, PgDiagnostics };
         _history = HistoryStore.Load();
         HistGrid.ItemsSource = _history;
         LogList.ItemsSource = _log;
@@ -153,7 +154,9 @@ public partial class MainWindow : Window
             var pageArg = args.FirstOrDefault(a => a.StartsWith("--page=", StringComparison.OrdinalIgnoreCase));
             if (pageArg != null && int.TryParse(pageArg[7..], out var pg)) ShowPage(pg);
             if (args.Contains("--compare")) CapPlan_Click(null, null);
-            if (args.Contains("--diag")) { ShowPage(11); DriverCheck_Click(null, null); }
+            if (args.Contains("--diag")) { ShowPage(12); DriverCheck_Click(null, null); }
+            var picArg = args.FirstOrDefault(a => a.StartsWith("--logo-pic=", StringComparison.OrdinalIgnoreCase));
+            if (picArg != null && File.Exists(picArg[11..])) { ShowPage(6); await LogoScanAsync(true); _logoUserPic = await File.ReadAllBytesAsync(picArg[11..]); LogoNewName.Text = Path.GetFileName(picArg[11..]); await LogoReconvertAsync(); PgLogo.ScrollToEnd(); }
             var stockArg = args.FirstOrDefault(a => a.StartsWith("--stock=", StringComparison.OrdinalIgnoreCase));
             if (stockArg != null && File.Exists(stockArg[8..])) await RepLoadStockFileAsync(stockArg[8..]);
             var extArg = args.FirstOrDefault(a => a.StartsWith("--extract=", StringComparison.OrdinalIgnoreCase));
@@ -200,6 +203,7 @@ public partial class MainWindow : Window
             if (item != null && Nav.SelectedItem != item) Nav.SelectedItem = item;
         }
         if (index == 1) Dispatcher.UIThread.Post(() => Hex.Focus(), DispatcherPriority.Background);
+        if (index == 6) _ = LogoScanAsync(false);
     }
 
     void LogToggle_Click(object sender, RoutedEventArgs e)
@@ -430,6 +434,7 @@ public partial class MainWindow : Window
         UpdateHexStatus();
         if (_buffer.Length == 0) ShowAnalysis(null);
         else if (analyze && _set.AutoAnalyze) _ = AnalyzeBufferAsync();
+        if (PgLogo.IsVisible) _ = LogoScanAsync(false);
     }
 
     void UpdateBufferInfo()

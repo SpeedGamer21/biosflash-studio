@@ -341,6 +341,20 @@
             <Setter Property="FontWeight" Value="Bold"/>
         </Style>
 
+        <!-- card lists (logo picker) -->
+        <Style Selector="ListBox.cards ListBoxItem">
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Margin" Value="0,2"/>
+        </Style>
+        <Style Selector="ListBox.cards ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource AccentSoft}"/>
+            <Setter Property="Foreground" Value="{DynamicResource Txt}"/>
+        </Style>
+        <Style Selector="ListBox.cards ListBoxItem:selected:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource AccentSoft}"/>
+            <Setter Property="Foreground" Value="{DynamicResource Txt}"/>
+        </Style>
+
         <!-- log list -->
         <Style Selector="ListBox.log">
             <Setter Property="Background" Value="Transparent"/>

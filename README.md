@@ -43,6 +43,7 @@
 - **Firmware forensics.** It shows the Intel descriptor regions, ME/CSE version, DMI serial and UUID, the Windows OEM key, the GbE MAC, NVRAM variables and the AMD PSP.
 - **Repair tools.** Clear NVRAM, clean the ME region, set the MAC, or rebuild a broken BIOS/ME/descriptor from stock firmware. The board's own identity (MAC, serial, OEM key) is carried over from its dump.
 - **Update extractor and ASUS CAP tool.** Pull a flashable image out of InsydeFlash `.exe` files, capsules and ZIP downloads.
+- **Boot logo editor.** Find the BIOS boot logo, even inside LZMA-compressed volumes, and replace it with your own picture. Safety nets make a wrong format, size or colour depth impossible.
 - **Safe by default.** Every read is backed up automatically. There are optional double reads, verify-after-write, confirmations before destructive steps and undo for buffer edits.
 - **No hardware needed to try it.** A built-in simulator and a synthetic demo firmware let you explore every feature.
 
@@ -53,7 +54,8 @@
 | ![Overview](docs/screenshots/overview.png) **Overview** — chip, programmer, firmware identity, DMI, OEM key | ![Light theme](docs/screenshots/light.png) **Light theme** |
 | ![Firmware analysis](docs/screenshots/analysis.png) **Firmware Analysis** — descriptor regions, ME report, usage map, NVRAM | ![Hex editor](docs/screenshots/hex.png) **Hex Editor** — handles 64 MB+ images |
 | ![Repair tools](docs/screenshots/repair.png) **Repair Tools** — NVRAM, ME, MAC, region merge, identity transfer | ![Update extractor](docs/screenshots/extractor.png) **Update Extractor** — images inside vendor updates |
-| ![ASUS CAP tool](docs/screenshots/cap-tool.png) **ASUS CAP Tool** — strip the capsule, keep your MAC | ![Debian](docs/screenshots/linux-debian.png) **Running on Debian 13** |
+| ![ASUS CAP tool](docs/screenshots/cap-tool.png) **ASUS CAP Tool** — strip the capsule, keep your MAC | ![Boot logo](docs/screenshots/boot-logo.png) **Boot Logo** — replace the logo with automatic conversion and checks |
+| ![Debian](docs/screenshots/linux-debian.png) **Running on Debian 13** | ![Linux diagnostics](docs/screenshots/linux-diagnostics.png) **Linux diagnostics** — libusb, udev rule, permissions |
 
 ## Download & install
 
@@ -107,6 +109,25 @@ To look around without a programmer, start **BiosFlash Studio (demo mode)** from
 - **Identity transfer:** copies the MAC, the NVRAM store, the SMBIOS serial/UUID tables and the MSDM key from the board's own dump into the repaired image, wherever the stock layout allows.
 - **Binary tools:** extract a range, split the image (system BIOS / EC firmware), pad or truncate to a size, append files. Every buffer change can be **undone**.
 
+### Boot logo editor
+- **Finds every picture** (BMP, JPEG, PNG, GIF) in the firmware. That includes pictures inside **LZMA-compressed** UEFI volumes, the usual place for AMI Aptio logos. The list shows thumbnails, resolution, colour depth and the full path (file › LZMA › logo file).
+- **Export** any picture, or **replace** it with your own (PNG, JPEG, BMP, GIF or WebP, any size).
+
+**Safety nets.** Each one stops a replacement that could keep the board from booting:
+
+| | |
+|---|---|
+| **Automatic conversion** | Your picture is converted to the *original's* format, resolution and colour depth (BMP 1/4/8/24/32-bit, baseline JPEG, PNG, single-frame GIF). You cannot pick a wrong one |
+| **Fit** | The picture is fitted (or cropped, or stretched) to the exact logo resolution, with a background colour taken from the original |
+| **Size** | The result must fit in the original's space. JPEG quality is lowered automatically; a size meter shows how much space is used |
+| **Re-decode** | The converted file is decoded again and its header is validated before it can be used |
+| **Rebuild** | Compressed volumes are recompressed as exact-length LZMA streams (checked against the xz and 7-Zip decoders). The freed space becomes a filler section, so no other file moves. FFS and CRC32 checksums are recomputed |
+| **Verification** | The rebuilt firmware is parsed again. Checks: every checksum, every LZMA volume, the new logo byte-for-byte, and *nothing outside the logo's own file changed*. If any check fails, the buffer is not touched |
+| **Protection** | Firmware with **Intel Boot Guard** is blocked unless you explicitly override. Pictures inside code modules or behind unsupported compression (Tiano, Brotli) are export-only |
+| **Undo** | Only the buffer changes, so Undo works, and your original dump stays in the backups |
+
+> Compressed logos are rebuilt in place. If your picture compresses worse than the original, it is refused with a clear message instead of moving other firmware files.
+
 ### Update extractor & ASUS CAP tool
 - **Update extractor:** finds flashable images inside vendor updates:
   - Intel full-flash images
@@ -155,12 +176,13 @@ A headless self-test exercises everything in software. It runs these against sim
 - the analyzer
 - the SPI and I²C drivers
 - the raw USB protocol used by the WinUSB and libusb backends
-- the capsule parser, the repair engine and the update extractor
+- the capsule parser, the repair engine, the update extractor and the boot logo engine (UEFI parser, LZMA rebuild, conversions)
 
 ```sh
 run-tests.bat           # or ./run-tests.sh   — full run with live progress bars
 run-tests.bat --quick   # skips the 32 MB chip (~1.5 min)
-run-tests.bat --repair  # repair tools + update extractor only (~2 s)
+run-tests.bat --repair  # repair tools, update extractor and boot logo (~3 s)
+run-tests.bat --logo    # boot logo engine only (~2 s)
 ```
 
 Progress is also written to `tests/SelfTest/bin/Release/net10.0/selftest.log`.
@@ -173,7 +195,7 @@ Progress is also written to `tests/SelfTest/bin/Release/net10.0/selftest.log`.
 src/
   Hardware/    CH341 backends: WCH DLL, shared raw USB protocol, WinUSB + libusb transports, simulator, USB scanner
   Flash/       chip database, SPI NOR driver, I²C EEPROM driver
-  Analysis/    firmware analyzer, capsule parser, repair engine, update extractor, demo image
+  Analysis/    firmware analyzer, UEFI volume parser, boot logo engine, capsule parser, repair engine, update extractor, demo image
   Controls/    hex editor, region bar, usage map, pinout drawings
   Ui/          theme palette, stroke icons, dialogs
   Platform/    OS helpers (udev rule install, folders)
@@ -198,5 +220,7 @@ docs/          logo and screenshots
 ## License
 
 No license has been chosen yet. Until one is added, all rights are reserved by the author.
+
+Third-party components: [Avalonia](https://avaloniaui.net) (MIT), [SkiaSharp](https://github.com/mono/SkiaSharp) (MIT) and [SharpCompress](https://github.com/adamhathcock/sharpcompress) (MIT, LZMA codec).
 
 BiosFlash Studio is not affiliated with WCH, Intel, AMD, ASUS, Insyde or AMI. The CH341A USB protocol follows public documentation, such as the flashrom project. Product names are trademarks of their owners.

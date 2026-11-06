@@ -46,14 +46,15 @@
                     <ListBoxItem Tag="3"><StackPanel Orientation="Horizontal" Spacing="11"><ui:Ico Kind="box"/><TextBlock Text="ASUS CAP Tool"/></StackPanel></ListBoxItem>
                     <ListBoxItem Tag="4"><StackPanel Orientation="Horizontal" Spacing="11"><ui:Ico Kind="verify"/><TextBlock Text="Repair Tools"/></StackPanel></ListBoxItem>
                     <ListBoxItem Tag="5"><StackPanel Orientation="Horizontal" Spacing="11"><ui:Ico Kind="layers"/><TextBlock Text="Update Extractor"/></StackPanel></ListBoxItem>
+                    <ListBoxItem Tag="6"><StackPanel Orientation="Horizontal" Spacing="11"><ui:Ico Kind="sun"/><TextBlock Text="Boot Logo"/></StackPanel></ListBoxItem>
                     <ListBoxItem Classes="group" IsEnabled="False"><TextBlock Text="DEVICE"/></ListBoxItem>
-                    <ListBoxItem Tag="6"><StackPanel Orientation="Horizontal" Spacing="11"><ui:Ico Kind="tune"/><TextBlock Text="Chip Functions"/></StackPanel></ListBoxItem>
-                    <ListBoxItem Tag="7"><StackPanel Orientation="Horizontal" Spacing="11"><ui:Ico Kind="db"/><TextBlock Text="Chip Database"/></StackPanel></ListBoxItem>
-                    <ListBoxItem Tag="8"><StackPanel Orientation="Horizontal" Spacing="11"><ui:Ico Kind="pin"/><TextBlock Text="Pinout &amp; Wiring"/></StackPanel></ListBoxItem>
+                    <ListBoxItem Tag="7"><StackPanel Orientation="Horizontal" Spacing="11"><ui:Ico Kind="tune"/><TextBlock Text="Chip Functions"/></StackPanel></ListBoxItem>
+                    <ListBoxItem Tag="8"><StackPanel Orientation="Horizontal" Spacing="11"><ui:Ico Kind="db"/><TextBlock Text="Chip Database"/></StackPanel></ListBoxItem>
+                    <ListBoxItem Tag="9"><StackPanel Orientation="Horizontal" Spacing="11"><ui:Ico Kind="pin"/><TextBlock Text="Pinout &amp; Wiring"/></StackPanel></ListBoxItem>
                     <ListBoxItem Classes="group" IsEnabled="False"><TextBlock Text="SYSTEM"/></ListBoxItem>
-                    <ListBoxItem Tag="9"><StackPanel Orientation="Horizontal" Spacing="11"><ui:Ico Kind="clock"/><TextBlock Text="History"/></StackPanel></ListBoxItem>
-                    <ListBoxItem Tag="10"><StackPanel Orientation="Horizontal" Spacing="11"><ui:Ico Kind="gear"/><TextBlock Text="Settings"/></StackPanel></ListBoxItem>
-                    <ListBoxItem Tag="11"><StackPanel Orientation="Horizontal" Spacing="11"><ui:Ico Kind="term"/><TextBlock Text="Diagnostics"/></StackPanel></ListBoxItem>
+                    <ListBoxItem Tag="10"><StackPanel Orientation="Horizontal" Spacing="11"><ui:Ico Kind="clock"/><TextBlock Text="History"/></StackPanel></ListBoxItem>
+                    <ListBoxItem Tag="11"><StackPanel Orientation="Horizontal" Spacing="11"><ui:Ico Kind="gear"/><TextBlock Text="Settings"/></StackPanel></ListBoxItem>
+                    <ListBoxItem Tag="12"><StackPanel Orientation="Horizontal" Spacing="11"><ui:Ico Kind="term"/><TextBlock Text="Diagnostics"/></StackPanel></ListBoxItem>
                 </ListBox>
             </DockPanel>
         </Border>
@@ -811,7 +812,113 @@
                         </StackPanel>
                     </ScrollViewer>
 
-                    <!-- ==== 6 CHIP FUNCTIONS ==== -->
+                    <!-- ==== 6 BOOT LOGO ==== -->
+                    <ScrollViewer x:Name="PgLogo" VerticalScrollBarVisibility="Auto" IsVisible="False">
+                        <Grid ColumnDefinitions="1*,12,1.35*">
+                            <StackPanel Spacing="12">
+                                <Border Classes="card">
+                                    <StackPanel Spacing="10">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <StackPanel Orientation="Horizontal" Spacing="8"><ui:Ico Kind="search" Brush="{DynamicResource Accent}"/><TextBlock Classes="h" Text="PICTURES IN THE FIRMWARE"/></StackPanel>
+                                            <Button Grid.Column="1" Classes="small" Click="LogoScan_Click"><StackPanel Orientation="Horizontal" Spacing="6"><ui:Ico Kind="refresh" Width="14" Height="14"/><TextBlock Text="Rescan"/></StackPanel></Button>
+                                        </Grid>
+                                        <Border x:Name="LogoProtBanner" CornerRadius="8" Padding="10,8" IsVisible="False" Background="{DynamicResource BadBg}">
+                                            <Grid ColumnDefinitions="Auto,*">
+                                                <ui:Ico x:Name="LogoProtIco" Kind="warn" Brush="{DynamicResource Bad}" Margin="0,0,8,0" VerticalAlignment="Top"/>
+                                                <TextBlock Grid.Column="1" x:Name="LogoProtText" TextWrapping="Wrap" FontSize="12" Foreground="{DynamicResource Bad}"/>
+                                            </Grid>
+                                        </Border>
+                                        <TextBlock x:Name="LogoEmpty" Classes="hint" Text="Read a chip or open a firmware image, then open this page to find its boot logo."/>
+                                        <ListBox x:Name="LogoList" Classes="cards" MaxHeight="520" Background="Transparent" SelectionChanged="LogoList_SelectionChanged">
+                                            <ListBox.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Grid ColumnDefinitions="Auto,*" Margin="0,4">
+                                                        <Border Width="112" Height="56" CornerRadius="6" Background="{DynamicResource InputBg}" BorderBrush="{DynamicResource Line}" BorderThickness="1" Margin="0,0,12,0" ClipToBounds="True">
+                                                            <Image Source="{Binding Thumb}" Stretch="Uniform" Margin="3"/>
+                                                        </Border>
+                                                        <StackPanel Grid.Column="1" Spacing="2">
+                                                            <TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="12.5" TextTrimming="CharacterEllipsis"/>
+                                                            <TextBlock Text="{Binding Where}" Classes="dim" FontSize="11.5" TextTrimming="CharacterEllipsis"/>
+                                                            <TextBlock Text="{Binding Status}" FontSize="11.5" Classes="logline" Classes.ok="{Binding Replaceable}" Classes.warn="{Binding NotReplaceable}" TextTrimming="CharacterEllipsis"/>
+                                                        </StackPanel>
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </ListBox.ItemTemplate>
+                                        </ListBox>
+                                    </StackPanel>
+                                </Border>
+                                <Border Classes="card">
+                                    <StackPanel Spacing="6">
+                                        <StackPanel Orientation="Horizontal" Spacing="8"><ui:Ico Kind="verify" Brush="{DynamicResource Good}"/><TextBlock Classes="h" Text="SAFETY NETS"/></StackPanel>
+                                        <TextBlock Classes="hint" Text="• Your picture is converted automatically to the original's format, resolution and colour depth — you cannot pick a wrong one.&#x0a;• JPEG is re-encoded as baseline (works with every UEFI decoder); quality is lowered automatically to fit.&#x0a;• The result must fit in the space of the original; it is decoded again before use.&#x0a;• After the change the firmware is re-parsed: checksums, LZMA volumes (exact-length streams), the new logo, and that nothing outside the logo's file changed.&#x0a;• Intel Boot Guard firmware is blocked by default; logos inside code modules or unsupported compression are export-only.&#x0a;• Only the buffer changes — Undo is available, and the original dump stays in your backups."/>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="2" Spacing="12">
+                                <Border Classes="card">
+                                    <StackPanel Spacing="10">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <StackPanel Orientation="Horizontal" Spacing="8"><ui:Ico Kind="file" Brush="{DynamicResource Info}"/><TextBlock Classes="h" Text="SELECTED PICTURE"/></StackPanel>
+                                            <Button Grid.Column="1" Classes="small" Click="LogoExport_Click"><StackPanel Orientation="Horizontal" Spacing="6"><ui:Ico Kind="export" Width="14" Height="14"/><TextBlock Text="Export…"/></StackPanel></Button>
+                                        </Grid>
+                                        <Border Classes="inset" Height="170" Padding="8">
+                                            <Image x:Name="LogoOrig" Stretch="Uniform"/>
+                                        </Border>
+                                        <TextBlock x:Name="LogoInfo" Classes="mono" FontSize="12" TextWrapping="Wrap" Text="—"/>
+                                    </StackPanel>
+                                </Border>
+                                <Border Classes="card">
+                                    <StackPanel Spacing="10">
+                                        <StackPanel Orientation="Horizontal" Spacing="8"><ui:Ico Kind="write" Brush="{DynamicResource Accent}"/><TextBlock Classes="h" Text="REPLACE WITH YOUR PICTURE"/></StackPanel>
+                                        <Grid ColumnDefinitions="Auto,*,Auto,*" RowDefinitions="Auto,8,Auto">
+                                            <Button Grid.ColumnSpan="2" x:Name="LogoPickBtn" Click="LogoPick_Click" HorizontalAlignment="Left"><StackPanel Orientation="Horizontal" Spacing="7"><ui:Ico Kind="open"/><TextBlock Text="Choose picture…"/></StackPanel></Button>
+                                            <TextBlock Grid.Column="2" Grid.ColumnSpan="2" x:Name="LogoNewName" Classes="dim" FontSize="12" Text="PNG, JPEG, BMP or GIF — any size" TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock Grid.Row="2" Classes="dim" Text="Fit" Margin="0,0,8,0"/>
+                                            <ComboBox Grid.Row="2" Grid.Column="1" x:Name="LogoFitBox" SelectedIndex="0" HorizontalAlignment="Stretch" Margin="0,0,12,0" SelectionChanged="LogoOption_Changed">
+                                                <ComboBoxItem Content="Fit (keep proportions)"/>
+                                                <ComboBoxItem Content="Fill (crop edges)"/>
+                                                <ComboBoxItem Content="Stretch"/>
+                                            </ComboBox>
+                                            <TextBlock Grid.Row="2" Grid.Column="2" Classes="dim" Text="Background" Margin="0,0,8,0"/>
+                                            <ComboBox Grid.Row="2" Grid.Column="3" x:Name="LogoBgBox" SelectedIndex="0" HorizontalAlignment="Stretch" SelectionChanged="LogoOption_Changed">
+                                                <ComboBoxItem Content="Original's corner colour"/>
+                                                <ComboBoxItem Content="Black"/>
+                                                <ComboBoxItem Content="White"/>
+                                            </ComboBox>
+                                        </Grid>
+                                        <Border Classes="inset" Height="170" Padding="8">
+                                            <Grid>
+                                                <Image x:Name="LogoNew" Stretch="Uniform"/>
+                                                <TextBlock x:Name="LogoNewHint" Classes="hint" HorizontalAlignment="Center" Text="The converted logo appears here"/>
+                                            </Grid>
+                                        </Border>
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <ProgressBar x:Name="LogoMeter" Maximum="1000" Margin="0,0,10,0"/>
+                                            <TextBlock Grid.Column="1" x:Name="LogoMeterText" Classes="mono dim" FontSize="12" Text="—"/>
+                                        </Grid>
+                                        <ItemsControl x:Name="LogoChecks">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding Text}" Classes="logline" Classes.ok="{Binding Ok}" Classes.err="{Binding Bad}" Margin="0,1"/>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                        <CheckBox x:Name="LogoOverride" IsVisible="False" IsCheckedChanged="LogoOverride_Changed"
+                                                  Content="I understand this firmware is verified at boot and the board may not start — allow the change anyway"/>
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <TextBlock x:Name="LogoResult" Classes="hint" Text=""/>
+                                            <Button Grid.Column="1" x:Name="LogoApplyBtn" Classes="accent" IsEnabled="False" Margin="10,0,0,0" Click="LogoApply_Click">
+                                                <StackPanel Orientation="Horizontal" Spacing="7"><ui:Ico Kind="auto"/><TextBlock Text="Apply to buffer"/></StackPanel>
+                                            </Button>
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </Grid>
+                    </ScrollViewer>
+
+                    <!-- ==== 7 CHIP FUNCTIONS ==== -->
                     <Grid x:Name="PgChipFn" ColumnDefinitions="*,12,*" IsVisible="False">
                         <ScrollViewer VerticalScrollBarVisibility="Auto">
                             <StackPanel Spacing="12">
@@ -891,7 +998,7 @@
                         </Border>
                     </Grid>
 
-                    <!-- ==== 7 DATABASE ==== -->
+                    <!-- ==== 8 DATABASE ==== -->
                     <Border x:Name="PgDatabase" Classes="card" IsVisible="False">
                         <DockPanel>
                             <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,10">
@@ -916,7 +1023,7 @@
                         </DockPanel>
                     </Border>
 
-                    <!-- ==== 8 PINOUT ==== -->
+                    <!-- ==== 9 PINOUT ==== -->
                     <ScrollViewer x:Name="PgPinout" VerticalScrollBarVisibility="Auto" IsVisible="False">
                         <StackPanel Spacing="12">
                             <WrapPanel x:Name="PinoutPanel"/>
@@ -929,7 +1036,7 @@
                         </StackPanel>
                     </ScrollViewer>
 
-                    <!-- ==== 9 HISTORY ==== -->
+                    <!-- ==== 10 HISTORY ==== -->
                     <Border x:Name="PgHistory" Classes="card" IsVisible="False">
                         <DockPanel>
                             <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,0,0,10">
@@ -951,7 +1058,7 @@
                         </DockPanel>
                     </Border>
 
-                    <!-- ==== 10 SETTINGS ==== -->
+                    <!-- ==== 11 SETTINGS ==== -->
                     <ScrollViewer x:Name="PgSettings" VerticalScrollBarVisibility="Auto" IsVisible="False">
                         <Grid ColumnDefinitions="*,12,*">
                             <Border Classes="card" VerticalAlignment="Top">
@@ -1002,7 +1109,7 @@
                         </Grid>
                     </ScrollViewer>
 
-                    <!-- ==== 11 DIAGNOSTICS ==== -->
+                    <!-- ==== 12 DIAGNOSTICS ==== -->
                     <Border x:Name="PgDiagnostics" Classes="card" IsVisible="False">
                         <DockPanel>
                             <WrapPanel DockPanel.Dock="Top" Margin="0,0,0,10">

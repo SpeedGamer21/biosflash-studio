@@ -586,7 +586,7 @@ public partial class MainWindow
         if (_busy) return;
         if (IsI2c) { Log("CHIP", "This function is only available in SPI mode.", LogLevel.Warn); return; }
         var chip = _chip ?? ChipDatabase.SpiChips.First();
-        ShowPage(6);
+        ShowPage(7);
         await RunOp(title, ct =>
         {
             var f = NewFlash(EnsureProgrammer(), chip);

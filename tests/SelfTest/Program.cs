@@ -14,11 +14,18 @@ using BiosFlashStudio.Hardware;
 bool quick = args.Contains("--quick");
 Console.OutputEncoding = System.Text.Encoding.UTF8;
 var logPath = Path.Combine(AppContext.BaseDirectory, "selftest.log");
-using var rep = new Reporter(args.Contains("--repair") ? 3 : quick ? 9 : 10, logPath);
+using var rep = new Reporter(args.Contains("--logo") ? 5 : args.Contains("--repair") ? 8 : quick ? 14 : 15, logPath);
 Console.WriteLine($"Watch progress from another terminal:  tail -f \"{logPath}\"");
+if (args.Contains("--logo"))
+{
+    Tests4.Run(rep, Path.GetDirectoryName(logPath));
+    rep.Finish();
+    return rep.Failures == 0 ? 0 : 1;
+}
 if (args.Contains("--repair"))
 {
     Tests3.Run(rep, Path.GetDirectoryName(logPath));
+    Tests4.Run(rep, Path.GetDirectoryName(logPath));
     rep.Finish();
     return rep.Failures == 0 ? 0 : 1;
 }
@@ -90,6 +97,7 @@ rep.Info($"chip database: {ChipDatabase.SpiChips.Count()} SPI, {ChipDatabase.I2c
 
 Tests2.Run(rep, Path.GetDirectoryName(logPath)!);
 Tests3.Run(rep, Path.GetDirectoryName(logPath));
+Tests4.Run(rep, Path.GetDirectoryName(logPath));
 
 rep.Finish();
 return rep.Failures == 0 ? 0 : 1;
