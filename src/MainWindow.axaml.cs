@@ -796,8 +796,8 @@ public partial class MainWindow : Window
             var lvl = d.IsCh341Spi && d.Accessible ? LogLevel.Ok : LogLevel.Warn;
             string note;
             if (OperatingSystem.IsWindows())
-                note = d.IsCh341Spi ? (d.IsWinUsb ? "WinUSB" : d.IsWchDriver ? "WCH driver" : d.Service == "" ? "NO DRIVER" : d.Service)
-                     : d.IsCh341Uart ? "UART mode — move jumper to SPI/I²C" : d.Service;
+                note = d.IsCh341Spi ? (d.IsWinUsb ? "WinUSB" : d.IsWchDriver ? "WCH driver" : d.IsSerialDriver ? $"WRONG DRIVER {d.Service} (serial) — install CH341PAR or WinUSB" : d.Service == "" ? "NO DRIVER" : d.Service)
+                     : d.IsCh341Uart ? $"UART mode ({(d.Service == "" ? "no driver" : d.Service)}) — move the jumper to pins 1-2 (SPI/I²C), CH341SER cannot program chips" : d.Service;
             else
                 note = d.IsCh341Uart ? "UART mode — move jumper to SPI/I²C" : d.Accessible ? "accessible" : "PERMISSION DENIED — install the udev rule (Diagnostics)";
             Log("USB", $"Found {d.Vid:X4}:{d.Pid:X4} ({note}) {d.Description}", lvl);
@@ -826,7 +826,8 @@ public partial class MainWindow : Window
                 else if (!d.Accessible) sb.AppendLine("    -> No permission: click 'Install udev rule', then re-plug the programmer.");
                 else sb.AppendLine("    -> Ready for the libusb backend.");
             }
-            if (d.IsCh341Uart && d.Present) sb.AppendLine("    -> This is the CH341 in UART/serial mode. Move the jumper to pins 1-2 (I²C/SPI).");
+            if (d.IsCh341Uart && d.Present) sb.AppendLine("    -> This is the CH341 in UART/serial mode (CH341SER = serial driver). It cannot program chips: move the jumper to pins 1-2 (SPI/I²C), re-plug, then install CH341PAR or WinUSB.");
+            if (d.IsCh341Spi && d.Present && d.IsSerialDriver) sb.AppendLine($"    -> Wrong driver: {d.Service} is the serial driver. Install CH341PAR (wch-ic.com) or WinUSB with Zadig for this device.");
         }
         DiagOut.Text = sb.ToString();
     }

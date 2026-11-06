@@ -21,7 +21,10 @@ public sealed class UsbDeviceInfo
     public bool IsCh341Spi => Vid == 0x1A86 && Pid == 0x5512;
     public bool IsCh341Uart => Vid == 0x1A86 && (Pid == 0x5523 || Pid == 0x7523);
     public bool IsWinUsb => Service.Equals("WinUSB", StringComparison.OrdinalIgnoreCase);
-    public bool IsWchDriver => Service.StartsWith("CH341", StringComparison.OrdinalIgnoreCase);
+    /// <summary>WCH serial (UART) driver, e.g. CH341SER / CH341SER_A64 — wrong driver for programming.</summary>
+    public bool IsSerialDriver => Service.Contains("SER", StringComparison.OrdinalIgnoreCase) || Service.Equals("usbser", StringComparison.OrdinalIgnoreCase);
+    /// <summary>WCH parallel/SPI driver (CH341PAR), which provides CH341DLL.</summary>
+    public bool IsWchDriver => Service.StartsWith("CH341", StringComparison.OrdinalIgnoreCase) && !IsSerialDriver;
 
     public override string ToString()
     {
