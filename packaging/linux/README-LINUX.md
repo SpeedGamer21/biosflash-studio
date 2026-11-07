@@ -6,17 +6,17 @@
 
 ```sh
 # Debian / Ubuntu / Mint
-sudo apt install ./biosflash-studio_2.0.0_amd64.deb
+sudo apt install ./biosflash-studio_2.1.0_amd64.deb
 
 # Fedora / RHEL / Rocky
-sudo dnf install ./biosflash-studio-2.0.0-1.x86_64.rpm
+sudo dnf install ./biosflash-studio-2.1.0-1.x86_64.rpm
 ```
 
 **Portable folder or tar.gz** (any distro)
 
 ```sh
-tar xzf biosflash-studio-2.0.0-linux-x64.tar.gz
-cd biosflash-studio-2.0.0
+tar xzf biosflash-studio-2.1.0-linux-x64.tar.gz
+cd biosflash-studio-2.1.0
 sudo sh install.sh            # installs to /opt, adds the udev rule + menu entry
 # or run without installing:
 chmod +x BiosFlashStudio && ./BiosFlashStudio

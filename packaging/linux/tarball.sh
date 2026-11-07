@@ -2,7 +2,7 @@
 # Creates dist/installers/biosflash-studio-<ver>-linux-<arch>.tar.gz with proper Unix permissions.
 # Works on Linux (and WSL on a Windows drive) and in Git Bash on Windows (used by build.bat).
 set -euo pipefail
-ARCH="$1"; VERSION="${2:-2.0.0}"
+ARCH="$1"; VERSION="${2:-2.1.0}"
 cd "$(dirname "$0")/../../dist"
 mkdir -p installers
 NAME="biosflash-studio-$VERSION"

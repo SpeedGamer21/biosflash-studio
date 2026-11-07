@@ -33,7 +33,7 @@
                     <Border Classes="inset" Padding="10,8">
                         <StackPanel Spacing="2">
                             <TextBlock x:Name="PlatformText" Text="Windows" FontSize="11" Foreground="{DynamicResource TxtDim}" TextTrimming="CharacterEllipsis"/>
-                            <TextBlock Text="v2.0 · keep a verified backup" FontSize="11" Foreground="{DynamicResource TxtFaint}"/>
+                            <TextBlock Text="v2.1 · keep a verified backup" FontSize="11" Foreground="{DynamicResource TxtFaint}"/>
                         </StackPanel>
                     </Border>
                 </StackPanel>

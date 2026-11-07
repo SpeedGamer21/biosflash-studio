@@ -25,7 +25,7 @@ esac
 HERE="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(cd "$HERE/../.." && pwd)"
 VERSION="$(sed -n 's:.*<Version>\(.*\)</Version>.*:\1:p' "$ROOT/src/BiosFlashStudio.csproj" | head -1)"
-VERSION="${VERSION:-2.0.0}"
+VERSION="${VERSION:-2.1.0}"
 OUT="$ROOT/dist/linux-$ARCH"
 DIST="$ROOT/dist/installers"
 mkdir -p "$DIST"

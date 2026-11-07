@@ -35,7 +35,7 @@ if /I "%1"=="linux" (
     copy /y packaging\linux\biosflash-studio.svg dist\linux-%%A\ >nul
     copy /y packaging\linux\60-biosflash-ch341a.rules dist\linux-%%A\ >nul
     copy /y packaging\linux\README-LINUX.md dist\linux-%%A\ >nul
-    if exist "%GITBASH%" ( "%GITBASH%" packaging/linux/tarball.sh %%A 2.0.0 ) else ( tar -C dist -czf dist\biosflash-studio-2.0.0-linux-%%A.tar.gz linux-%%A )
+    if exist "%GITBASH%" ( "%GITBASH%" packaging/linux/tarball.sh %%A 2.1.0 ) else ( tar -C dist -czf dist\biosflash-studio-2.1.0-linux-%%A.tar.gz linux-%%A )
   )
   goto :done
 )

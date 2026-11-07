@@ -220,12 +220,12 @@ Get the file for your system from the **[Releases](../../releases)** page.
 
 | System | File | Install |
 |---|---|---|
-| **Windows 10/11 (x64)** | `BiosFlashStudio-2.0.0-win-x64-setup.exe` | Run the installer. You can install for the current user (no admin) or for all users. It adds a Start-menu entry and a *demo mode* shortcut |
-| **Debian / Ubuntu / Mint (x64)** | `biosflash-studio_2.0.0_amd64.deb` | `sudo apt install ./biosflash-studio_2.0.0_amd64.deb` |
-| **Debian / Raspberry Pi OS (ARM64)** | `biosflash-studio_2.0.0_arm64.deb` | `sudo apt install ./biosflash-studio_2.0.0_arm64.deb` |
-| **Fedora / RHEL / Rocky (x64)** | `biosflash-studio-2.0.0-1.x86_64.rpm` | `sudo dnf install ./biosflash-studio-2.0.0-1.x86_64.rpm` |
-| **Fedora (ARM64)** | `biosflash-studio-2.0.0-1.aarch64.rpm` | `sudo dnf install ./biosflash-studio-2.0.0-1.aarch64.rpm` |
-| **Any Linux (portable)** | `biosflash-studio-2.0.0-linux-x64.tar.gz` (or `-arm64`) | Unpack, then run `sudo sh install.sh`, or just `./BiosFlashStudio` |
+| **Windows 10/11 (x64)** | `BiosFlashStudio-2.1.0-win-x64-setup.exe` | Run the installer. You can install for the current user (no admin) or for all users. It adds a Start-menu entry and a *demo mode* shortcut |
+| **Debian / Ubuntu / Mint (x64)** | `biosflash-studio_2.1.0_amd64.deb` | `sudo apt install ./biosflash-studio_2.1.0_amd64.deb` |
+| **Debian / Raspberry Pi OS (ARM64)** | `biosflash-studio_2.1.0_arm64.deb` | `sudo apt install ./biosflash-studio_2.1.0_arm64.deb` |
+| **Fedora / RHEL / Rocky (x64)** | `biosflash-studio-2.1.0-1.x86_64.rpm` | `sudo dnf install ./biosflash-studio-2.1.0-1.x86_64.rpm` |
+| **Fedora (ARM64)** | `biosflash-studio-2.1.0-1.aarch64.rpm` | `sudo dnf install ./biosflash-studio-2.1.0-1.aarch64.rpm` |
+| **Any Linux (portable)** | `biosflash-studio-2.1.0-linux-x64.tar.gz` (or `-arm64`) | Unpack, then run `sudo sh install.sh`, or just `./BiosFlashStudio` |
 
 The Linux packages pull in `libusb` automatically. They also install a udev rule so the programmer works **without root**: re-plug the CH341A once after installing. More details are in [packaging/linux/README-LINUX.md](packaging/linux/README-LINUX.md).
 

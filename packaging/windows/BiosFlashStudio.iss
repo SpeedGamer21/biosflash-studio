@@ -2,7 +2,7 @@
 ; Build:  build.bat installer   (or: ISCC packaging\windows\BiosFlashStudio.iss after build.bat portable)
 
 #define AppName "BiosFlash Studio"
-#define AppVersion "2.0.0"
+#define AppVersion "2.1.0"
 #define AppExe "BiosFlashStudio.exe"
 #define Root "..\.."
 
