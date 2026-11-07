@@ -100,5 +100,20 @@ public static class PlatformUtil
         catch { }
     }
 
+    public static void OpenUrl(string url)
+    {
+        try
+        {
+            if (OperatingSystem.IsWindows()) Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+            else
+            {
+                var psi = new ProcessStartInfo(OperatingSystem.IsMacOS() ? "open" : "xdg-open") { UseShellExecute = false };
+                psi.ArgumentList.Add(url);
+                Process.Start(psi);
+            }
+        }
+        catch { }
+    }
+
     public static bool IsRoot => !OperatingSystem.IsWindows() && Environment.UserName == "root";
 }

@@ -110,6 +110,7 @@ public partial class MainWindow : Window
 
         PlatformText.Text = PlatformUtil.OsName;
         UdevBtn.IsVisible = OperatingSystem.IsLinux();
+        WchDriverBtn.IsVisible = ZadigBtn.IsVisible = OperatingSystem.IsWindows();
         SetLogVisible(_set.ShowLog);
         SetDetailsVisible(_set.ShowDetails);
 
@@ -138,6 +139,7 @@ public partial class MainWindow : Window
         {
             _loaded = true;
             QuickUsbProbe();
+            StartUsbWatch();
             if (Environment.GetCommandLineArgs().Any(a => a.Equals("--demo", StringComparison.OrdinalIgnoreCase)))
             {
                 BackendCombo.SelectedItem = BackendCombo.Items.OfType<ComboBoxItem>().First(i => (BackendKind)i.Tag == BackendKind.Simulator);
@@ -761,6 +763,8 @@ public partial class MainWindow : Window
         SetDoubleRead.IsChecked = _set.DoubleRead;
         SetAutoAnalyze.IsChecked = _set.AutoAnalyze;
         SetAutoBackup.IsChecked = _set.AutoBackup;
+        SetAutoConnect.IsChecked = _set.AutoConnect;
+        SetAutoDetect.IsChecked = _set.AutoDetectChip;
         SetBackupFolder.Text = _set.BackupFolder;
         SetEraseMode.SelectedIndex = _set.EraseMode switch { "Block" => 1, "Sector" => 2, _ => 0 };
         SetSpeed.SelectedIndex = Math.Clamp(_set.SpeedIndex, 0, 3);
@@ -777,6 +781,8 @@ public partial class MainWindow : Window
         _set.DoubleRead = SetDoubleRead.IsChecked == true;
         _set.AutoAnalyze = SetAutoAnalyze.IsChecked == true;
         _set.AutoBackup = SetAutoBackup.IsChecked == true;
+        _set.AutoConnect = SetAutoConnect.IsChecked == true;
+        _set.AutoDetectChip = SetAutoDetect.IsChecked == true;
         _set.BackupFolder = (SetBackupFolder.Text ?? "").Trim();
         _set.EraseMode = (SetEraseMode.SelectedItem as ComboBoxItem)?.Tag as string ?? "Chip";
         _set.SpeedIndex = Math.Max(0, SetSpeed.SelectedIndex);
@@ -871,9 +877,17 @@ public partial class MainWindow : Window
         sb.AppendLine();
         if (OperatingSystem.IsWindows())
         {
-            sb.AppendLine("Driver sources:");
-            sb.AppendLine("  • WCH CH341PAR (parallel/SPI/I2C) driver — official from wch-ic.com (installs CH341DLLA64.DLL)");
-            sb.AppendLine("  • WinUSB via Zadig — select 'USB-EPP/I2C... CH341A' (1A86:5512) and install WinUSB");
+            sb.AppendLine("Windows has no built-in driver for the CH341A in programmer mode (1A86:5512). Install ONE of these:");
+            sb.AppendLine("  1. WCH CH341PAR (recommended) — click 'Get CH341PAR driver', run CH341PAR.EXE, press INSTALL.");
+            sb.AppendLine("     Provides CH341DLLA64.DLL (also used by AsProgrammer/NeoProgrammer). Supports SPI and I²C.");
+            sb.AppendLine("  2. WinUSB via Zadig — click 'Get Zadig', then:");
+            sb.AppendLine("     • Options → List All Devices (Zadig hides devices that already have a driver)");
+            sb.AppendLine("     • pick 'USB-EPP/I2C... CH341A' — check the USB ID reads 1A86 5512");
+            sb.AppendLine("     • choose WinUSB in the target box and click Install/Replace Driver. (SPI only)");
+            sb.AppendLine();
+            sb.AppendLine("If the device shows as 1A86 5523/7523 ('USB-SERIAL CH340/CH341', driver CH341SER) the");
+            sb.AppendLine("jumper is in UART mode: move it to pins 1-2 (SPI/I²C) and re-plug — the ID changes to 1A86 5512.");
+            sb.AppendLine("With the 'Auto detect' backend the app picks whichever driver is installed and connects on plug-in.");
         }
         else
         {
@@ -881,6 +895,8 @@ public partial class MainWindow : Window
             sb.AppendLine("  • Debian / Ubuntu : sudo apt install libusb-1.0-0");
             sb.AppendLine("  • Fedora          : sudo dnf install libusb1");
             sb.AppendLine("  • Permissions     : 'Install udev rule' (or packaging/linux/install.sh), then re-plug the CH341A");
+            sb.AppendLine("  • No kernel driver is needed (or used): the app talks to the CH341A from user space via libusb.");
+            sb.AppendLine("    The in-kernel 'ch341' module only handles the UART mode (1a86:7523) — that is not the programmer mode.");
             sb.AppendLine("  • If a kernel module (spi-ch341 / i2c-ch341) grabs the device it is detached automatically.");
         }
         DiagOut.Text = sb.ToString();

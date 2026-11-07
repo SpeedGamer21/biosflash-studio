@@ -183,7 +183,8 @@ public static class Uefi
                     byte ctype = d[p + hdr + 4];
                     s.DataOff = p + hdr + 5;
                     if (ctype == 0) { s.Encoding = "none"; ParseSections(t, b, s.DataOff, s.End, s); }
-                    else s.Encoding = "unsupported (EFI/Tiano compression)";
+                    else if (ctype == 1) DecodeEfiSection(t, b, s, null);
+                    else s.Encoding = $"unsupported (compression type {ctype})";
                     break;
                 }
                 case 0x02:   // GUID-defined
@@ -206,9 +207,10 @@ public static class Uefi
                         t.Buffers.Add(s.Inner);
                         ParseSections(t, s.Inner, 0, raw.Length, s);
                     }
+                    else if (s.Guid == TianoGuid) DecodeEfiSection(t, b, s, EfiCompression.Variant.Tiano);
                     else if (s.Guid == Crc32Guid) { s.Encoding = "CRC32"; ParseSections(t, b, dataOff, s.End, s); }
                     else if ((gattr & 0x01) == 0) { s.Encoding = "none"; ParseSections(t, b, dataOff, s.End, s); }
-                    else s.Encoding = s.Guid == TianoGuid ? "unsupported (Tiano compression)" : s.Guid == LzmaF86Guid ? "unsupported (LZMA + x86 filter)"
+                    else s.Encoding = s.Guid == LzmaF86Guid ? "unsupported (LZMA + x86 filter)"
                         : s.Guid == BrotliGuid ? "unsupported (Brotli)" : $"unsupported (GUID {s.Guid})";
                     break;
                 }
@@ -236,6 +238,50 @@ public static class Uefi
             }
             p = Align(p + size, 4);
         }
+    }
+
+    /// <summary>True for sections whose content is stored compressed and rebuilt on change (LZMA, EFI, Tiano).</summary>
+    public static bool IsCompressed(UefiNode n) => n.Kind == UefiKind.Section && n.Inner != null && n.Encoding is "LZMA" or "EFI" or "Tiano";
+
+    /// <summary>
+    /// EFI 1.1 / Tiano section. The compression-section header does not say which of the two variants was used, so both are
+    /// tried and the one whose output is a clean run of sections wins (as UEFITool does).
+    /// </summary>
+    static void DecodeEfiSection(Tree t, UefiBuffer b, UefiNode s, EfiCompression.Variant? only)
+    {
+        var d = b.Data;
+        if (b.Depth >= MaxDepth) { s.Encoding = "EFI/Tiano (too deep)"; return; }
+        byte[] best = null;
+        EfiCompression.Variant bestV = EfiCompression.Variant.Tiano;
+        foreach (var v in only.HasValue ? new[] { only.Value } : new[] { EfiCompression.Variant.Efi, EfiCompression.Variant.Tiano })
+        {
+            if (!EfiCompression.TryDecompress(d, s.DataOff, s.End - s.DataOff, v, out var raw)) continue;
+            if (best == null || SectionsCover(raw) && !SectionsCover(best)) { best = raw; bestV = v; }
+        }
+        if (best == null) { s.Encoding = "EFI/Tiano (corrupt)"; return; }
+        if (t.DecompressedBytes + best.Length > MaxDecompressed) { s.Encoding = "EFI/Tiano (too large)"; return; }
+        t.DecompressedBytes += best.Length;
+        s.Encoding = bestV == EfiCompression.Variant.Efi ? "EFI" : "Tiano";
+        s.Inner = new UefiBuffer { Data = best, Owner = s, Depth = b.Depth + 1 };
+        t.Buffers.Add(s.Inner);
+        ParseSections(t, s.Inner, 0, best.Length, s);
+    }
+
+    /// <summary>Does <paramref name="d"/> consist of well-formed sections from start to end (padding allowed)?</summary>
+    static bool SectionsCover(byte[] d)
+    {
+        long p = 0;
+        int n = 0;
+        while (p + 4 <= d.Length)
+        {
+            uint size = U24(d, p);
+            int hdr = 4;
+            if (size == 0xFFFFFF) { size = U32(d, p + 4); hdr = 8; }
+            if (size < hdr || p + size > d.Length || d[p + 3] == 0 || d[p + 3] > 0x1C) return false;
+            n++;
+            p = Align(p + size, 4);
+        }
+        return n > 0;
     }
 
     // ================================================================== LZMA (UEFI LzmaCustomDecompress format: 5-byte props + u64 size + stream)
@@ -301,17 +347,20 @@ public static class Uefi
         return (byte)(0x100 - (sum & 0xFF));
     }
 
-    public static byte FfsDataChecksum(byte[] d, UefiNode f)
+    public static byte FfsDataChecksum(byte[] d, UefiNode f) => FfsDataChecksum(d, f, f.Len);
+
+    static byte FfsDataChecksum(byte[] d, UefiNode f, long len)
     {
         if ((f.Attributes & FFS_ATTRIB_CHECKSUM) == 0) return 0xAA;
         int sum = 0;
-        for (long i = f.DataOff; i < f.End; i++) sum += d[i];
+        for (long i = f.DataOff; i < f.Off + len; i++) sum += d[i];
         return (byte)(0x100 - (sum & 0xFF));
     }
 
-    public static void FixFileChecksums(byte[] d, UefiNode f)
+    /// <summary>Recomputes both FFS checksums; <paramref name="len"/> overrides the file length (after the file was resized).</summary>
+    public static void FixFileChecksums(byte[] d, UefiNode f, long len = -1)
     {
-        d[f.Off + 17] = FfsDataChecksum(d, f);
+        d[f.Off + 17] = FfsDataChecksum(d, f, len < 0 ? f.Len : len);
         d[f.Off + 16] = FfsHeaderChecksum(d, f);
     }
 
@@ -362,7 +411,7 @@ public static class Uefi
         for (var x = n; x != null; x = x.Parent)
         {
             if (x.Kind == UefiKind.File) parts.Add(x.Name != "" ? $"{x.Name}" : $"{{{x.Guid.ToString().ToUpperInvariant()[..8]}…}}");
-            else if (x.Kind == UefiKind.Section && x.Encoding == "LZMA") parts.Add("LZMA");
+            else if (IsCompressed(x)) parts.Add(x.Encoding);
         }
         parts.Reverse();
         return string.Join(" › ", parts);

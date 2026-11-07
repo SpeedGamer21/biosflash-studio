@@ -58,7 +58,12 @@ public partial class MainWindow
             Log("HARDWARE", "Programmer disconnected.");
             return;
         }
-        await RunOp("CONNECT", ct => { EnsureProgrammer(); return $"{_prog.Name} ready"; }, history: false);
+        bool ok = await RunOp("CONNECT", ct => { EnsureProgrammer(); return $"{_prog.Name} ready"; }, history: false);
+        if (!ok && OperatingSystem.IsLinux() && UsbScanner.ScanWch().Any(d => d.IsCh341Spi && !d.Accessible))
+        {
+            _driverHelpShown = false; // explicit click: always offer the fix again
+            await OfferUdevInstallAsync();
+        }
     }
 
     void UpdateHardwareCard()

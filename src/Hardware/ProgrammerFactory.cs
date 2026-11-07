@@ -5,14 +5,14 @@ public static class ProgrammerFactory
     /// <summary>Backends offered on the current operating system (tag, display text).</summary>
     public static IReadOnlyList<(BackendKind kind, string text)> Available()
     {
-        var l = new List<(BackendKind, string)> { (BackendKind.Auto, "Auto detect") };
+        var l = new List<(BackendKind, string)> { (BackendKind.Auto, "Auto detect (recommended)") };
         if (OperatingSystem.IsWindows())
         {
             l.Add((BackendKind.Ch341Dll, "CH341A · WCH driver (DLL)"));
             l.Add((BackendKind.WinUsb, "CH341A · WinUSB (Zadig)"));
             l.Add((BackendKind.LibUsb, "CH341A · libusb-1.0.dll"));
         }
-        else l.Add((BackendKind.LibUsb, "CH341A · libusb"));
+        else l.Add((BackendKind.LibUsb, "CH341A · libusb (built-in)"));
         l.Add((BackendKind.Simulator, "Simulator (no hardware)"));
         return l;
     }

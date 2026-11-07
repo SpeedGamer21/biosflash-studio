@@ -75,7 +75,7 @@
                             <TextBlock x:Name="ConnText" Text="Disconnected" FontWeight="SemiBold" FontSize="12" Foreground="{DynamicResource Bad}"/>
                         </StackPanel>
                     </Border>
-                    <ComboBox x:Name="BackendCombo" Width="215" SelectionChanged="BackendCombo_SelectionChanged" ToolTip.Tip="Programmer backend / driver"/>
+                    <ComboBox x:Name="BackendCombo" Width="235" SelectionChanged="BackendCombo_SelectionChanged" ToolTip.Tip="Programmer backend / driver. Linux needs no extra driver: the CH341A is driven through libusb. Auto detect picks the right one and connects when the programmer is plugged in."/>
                     <Button x:Name="ConnectBtn" Classes="accent" Click="Connect_Click">
                         <StackPanel Orientation="Horizontal" Spacing="7"><ui:Ico Kind="usb"/><TextBlock x:Name="ConnectText" Text="Connect"/></StackPanel>
                     </Button>
@@ -840,7 +840,7 @@
                                 </Border>
                                 <Expander Classes="card">
                                     <Expander.Header><StackPanel Orientation="Horizontal" Spacing="8"><ui:Ico Kind="verify" Brush="{DynamicResource Good}"/><TextBlock Classes="h" Text="HOW THE CHANGE IS KEPT SAFE"/></StackPanel></Expander.Header>
-                                        <TextBlock Classes="hint" LineHeight="20" Text="• Your picture is converted automatically to the original's format, resolution and colour depth — you cannot pick a wrong one.&#x0a;• JPEG is re-encoded as baseline (works with every UEFI decoder); quality is lowered automatically to fit.&#x0a;• The result must fit in the space of the original; it is decoded again before use.&#x0a;• After the change the firmware is re-parsed: checksums, LZMA volumes (exact-length streams), the new logo, and that nothing outside the logo's file changed.&#x0a;• Intel Boot Guard firmware is blocked by default; logos inside code modules or unsupported compression are export-only.&#x0a;• Only the buffer changes — Undo is available, and the original dump stays in your backups."/>
+                                        <TextBlock Classes="hint" LineHeight="20" Text="• Your picture is converted automatically to the original's format, resolution and colour depth — you cannot pick a wrong one.&#x0a;• JPEG is re-encoded as baseline (works with every UEFI decoder); quality is lowered automatically to fit.&#x0a;• The result must fit in the space of the original; it is decoded again before use.&#x0a;• After the change the firmware is re-parsed: checksums, LZMA / EFI / Tiano sections, the new logo, and that nothing outside the logo's file changed.&#x0a;• Intel Boot Guard firmware is blocked by default; logos inside code modules or unsupported compression are export-only.&#x0a;• Only the buffer changes — Undo is available, and the original dump stays in your backups."/>
                                 </Expander>
                             </StackPanel>
 
@@ -1060,6 +1060,9 @@
                                     <CheckBox x:Name="SetSkipBlank" Content="Skip blank (0xFF) pages when programming"/>
                                     <CheckBox x:Name="Set4Byte" Content="Use 4-byte address mode for chips &gt; 16 MB"/>
                                     <CheckBox x:Name="SetConfirm" Content="Ask before destructive operations"/>
+                                    <TextBlock Classes="h" Text="PROGRAMMER" Margin="0,14,0,6"/>
+                                    <CheckBox x:Name="SetAutoConnect" Content="Connect automatically when the CH341A is plugged in"/>
+                                    <CheckBox x:Name="SetAutoDetect" Content="Detect the chip (JEDEC ID) right after connecting"/>
                                     <Grid ColumnDefinitions="120,*" Margin="0,10,0,0">
                                         <TextBlock Classes="dim" Text="Erase method"/>
                                         <ComboBox Grid.Column="1" x:Name="SetEraseMode" HorizontalAlignment="Stretch">
@@ -1105,6 +1108,8 @@
                             <WrapPanel DockPanel.Dock="Top" Margin="0,0,0,10">
                                 <Button Margin="0,0,8,8" Click="ScanUsb_Click"><StackPanel Orientation="Horizontal" Spacing="7"><ui:Ico Kind="usb"/><TextBlock Text="Scan USB devices"/></StackPanel></Button>
                                 <Button Margin="0,0,8,8" Click="DriverCheck_Click"><StackPanel Orientation="Horizontal" Spacing="7"><ui:Ico Kind="verify"/><TextBlock Text="Driver check"/></StackPanel></Button>
+                                <Button x:Name="WchDriverBtn" Margin="0,0,8,8" Click="GetWchDriver_Click" IsVisible="False" ToolTip.Tip="Official WCH CH341PAR driver (SPI/I²C mode) from wch-ic.com"><StackPanel Orientation="Horizontal" Spacing="7"><ui:Ico Kind="export"/><TextBlock Text="Get CH341PAR driver"/></StackPanel></Button>
+                                <Button x:Name="ZadigBtn" Margin="0,0,8,8" Click="GetZadig_Click" IsVisible="False" ToolTip.Tip="Zadig installs the generic WinUSB driver"><StackPanel Orientation="Horizontal" Spacing="7"><ui:Ico Kind="export"/><TextBlock Text="Get Zadig (WinUSB)"/></StackPanel></Button>
                                 <Button x:Name="UdevBtn" Margin="0,0,8,8" Click="InstallUdev_Click" IsVisible="False"><StackPanel Orientation="Horizontal" Spacing="7"><ui:Ico Kind="linux"/><TextBlock Text="Install udev rule"/></StackPanel></Button>
                                 <Button Margin="0,0,8,8" Click="Bench_Click"><StackPanel Orientation="Horizontal" Spacing="7"><ui:Ico Kind="bench"/><TextBlock Text="Read speed benchmark"/></StackPanel></Button>
                                 <Button Margin="0,0,8,8" Click="LoadDemo_Click"><StackPanel Orientation="Horizontal" Spacing="7"><ui:Ico Kind="file"/><TextBlock Text="Load demo image"/></StackPanel></Button>

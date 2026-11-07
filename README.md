@@ -16,7 +16,7 @@
   <img alt="Fedora" src="https://img.shields.io/badge/Fedora%20%7C%20RHEL-.rpm-51A2DA">
   <img alt=".NET 10" src="https://img.shields.io/badge/.NET-10-512BD4">
   <img alt="Avalonia UI" src="https://img.shields.io/badge/UI-Avalonia%2011-8B44AC">
-  <img alt="Self-tests" src="https://img.shields.io/badge/self--tests-91%20passing-3DDC97">
+  <img alt="Self-tests" src="https://img.shields.io/badge/self--tests-114%20passing-3DDC97">
 </p>
 
 <p align="center">
@@ -46,7 +46,7 @@
 - **One app on three platforms.** Native installers for Windows, Debian/Ubuntu and Fedora/RHEL, each with the .NET runtime bundled.
 - **CH341A done properly.** It works through the WCH vendor driver or WinUSB (Zadig) on Windows and through libusb on Linux, and picks the backend automatically. Chips are auto-detected by JEDEC ID, with an SFDP size cross-check and 4-byte addressing for 32 MB+ chips. Smart write only rewrites the 4 KB sectors that changed.
 - **Firmware forensics.** It shows the Intel descriptor regions, ME/CSE version, DMI serial and UUID, the Windows OEM key, the GbE MAC, NVRAM variables and the AMD PSP.
-- **Boot logo editor.** Find the logo, even inside LZMA-compressed volumes, and replace it. Safety nets make a wrong format, size or colour depth impossible.
+- **Boot logo editor.** Find the logo, even inside LZMA- or EFI/Tiano-compressed sections (AMI Aptio 4 and V), and replace it. Safety nets make a wrong format, size or colour depth impossible.
 - **Repair tools.** Clear NVRAM, clean the ME region, set the MAC, or rebuild a broken BIOS/ME/descriptor from stock firmware. The board's own identity (MAC, serial, OEM key) is carried over from its dump.
 - **Update extractor and ASUS CAP tool.** Pull a flashable image out of InsydeFlash `.exe` files, capsules and ZIP downloads.
 - **Safe by default.** Every read is backed up automatically. There are optional double reads, verify-after-write, confirmations before destructive steps and undo for every buffer edit.
@@ -92,12 +92,12 @@
 <td><img src="docs/screenshots/boot-logo.png" alt="Boot logo replacement" width="440"></td>
 </tr>
 <tr>
-<td align="center"><sub>Every picture in the firmware, including inside LZMA volumes</sub></td>
+<td align="center"><sub>Every picture in the firmware, including inside compressed volumes</sub></td>
 <td align="center"><sub>Your picture, auto-converted, with a size meter and a checklist</sub></td>
 </tr>
 </table>
 
-- Finds every **BMP, JPEG, PNG and GIF** in the firmware, including pictures inside **LZMA-compressed** UEFI volumes (the usual place for AMI Aptio logos). Shows thumbnail, resolution, colour depth and the full path (file › LZMA › logo file).
+- Finds every **BMP, JPEG, PNG and GIF** in the firmware, including pictures inside **LZMA** and **EFI/Tiano**-compressed UEFI sections (AMI Aptio V and Aptio 4 logos). Shows thumbnail, resolution, colour depth and the full path (file › LZMA › logo file).
 - **Export** any picture, or **replace** it with your own (PNG, JPEG, BMP, GIF or WebP, any size).
 
 **Safety nets.** Each one stops a replacement that could keep the board from booting:
@@ -108,8 +108,8 @@
 | **Fit** | Fit, fill (crop) or stretch to the exact logo resolution, with a background colour taken from the original |
 | **Size** | The result must fit in the original's space. JPEG quality is lowered automatically; a size meter shows how much space is used |
 | **Re-decode** | The converted file is decoded again and its header is validated before it can be used |
-| **Rebuild** | Compressed volumes are recompressed as exact-length LZMA streams (checked against the xz and 7-Zip decoders). The freed space becomes a filler section, so no other file moves. FFS and CRC32 checksums are recomputed |
-| **Verification** | The rebuilt firmware is parsed again. Checks: every checksum, every LZMA volume, the new logo byte-for-byte, and *nothing outside the logo's own file changed*. If any check fails, the buffer is not touched |
+| **Rebuild** | Compressed volumes are recompressed as exact-length LZMA streams (checked against the xz and 7-Zip decoders). The freed space becomes a filler section, so no other file moves. EFI/Tiano sections (AMI Aptio 4) are recompressed in place; if the new logo is larger, its file grows into the volume's free space, as AMI's ChangeLogo does. FFS and CRC32 checksums are recomputed |
+| **Verification** | The rebuilt firmware is parsed again. Checks: every checksum, every compressed section, the new logo byte-for-byte, and *nothing outside the logo's own file changed*. If any check fails, the buffer is not touched |
 | **Protection** | Firmware with **Intel Boot Guard** is blocked unless you explicitly override. Pictures inside code modules or behind unsupported compression (Tiano, Brotli) are export-only |
 | **Undo** | Only the buffer changes, so Undo works, and your original dump stays in the backups |
 
@@ -285,7 +285,7 @@ A headless self-test exercises everything in software. It runs these against sim
 - the SPI and I²C drivers
 - the raw USB protocol used by the WinUSB and libusb backends
 - the capsule parser, the repair engine and the update extractor
-- the boot logo engine (UEFI parser, LZMA rebuild, conversions)
+- the boot logo engine (UEFI parser, LZMA and EFI/Tiano rebuild, conversions)
 
 ```sh
 run-tests.bat           # or ./run-tests.sh   — full run with live progress bars (91 tests)

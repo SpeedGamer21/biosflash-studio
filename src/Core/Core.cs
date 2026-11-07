@@ -24,6 +24,10 @@ public sealed class AppSettings
     public string LastFolder { get; set; } = "";
     public bool ShowLog { get; set; } = false;
     public bool ShowDetails { get; set; } = false;
+    /// <summary>Connect automatically when a CH341A is plugged in (or already present at start-up).</summary>
+    public bool AutoConnect { get; set; } = true;
+    /// <summary>Read the JEDEC ID right after an automatic connect.</summary>
+    public bool AutoDetectChip { get; set; } = true;
 
     public static string Dir => Path.Combine(Special(Environment.SpecialFolder.ApplicationData, ".config"), "BiosFlashStudio");
     public static string DefaultBackupFolder => Path.Combine(Special(Environment.SpecialFolder.MyDocuments, "Documents"), "BiosFlash Studio", "Backups");

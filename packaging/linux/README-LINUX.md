@@ -31,6 +31,10 @@ Then **re-plug the CH341A** so the udev rule applies. After that, no root rights
 | USB access | `libusb-1.0-0` | `libusb1` |
 | GUI | `libfontconfig1 libx11-6 libice6 libsm6` | `fontconfig libX11 libICE libSM` |
 
+**No kernel driver is needed.** The app talks to the CH341A (`1a86:5512`) from user space through libusb.
+The in-kernel `ch341` module only serves the UART mode (`1a86:7523`). If `lsusb` shows `7523`, the jumper is
+on the serial position: move it to pins 1-2 (SPI/I²C) and re-plug.
+
 The .NET runtime is bundled. The app runs on X11 and on Wayland desktops through XWayland (GNOME and KDE ship it by default).
 
 ## Permissions (udev)

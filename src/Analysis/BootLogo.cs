@@ -30,12 +30,14 @@ public sealed class LogoEntry
     public long Slot;
     public UefiNode Container;
     public bool Compressed;
+    /// <summary>Compression of the nearest compressed ancestor ("LZMA", "EFI", "Tiano"), empty when stored plain.</summary>
+    public string Compression = "";
     public bool Replaceable;
     public string Reason = "";
     public string Location = "";
     public byte[] Bytes;
     public string Title => $"{Info.Summary} · {Flash.ChipInfo.FormatSize(Info.Length)}";
-    public string Where => (Compressed ? "Compressed (LZMA) · " : "Uncompressed · ") + Location;
+    public string Where => (Compressed ? $"Compressed ({Compression}) · " : "Uncompressed · ") + Location;
 }
 
 public sealed class ProtectionInfo
@@ -53,9 +55,12 @@ public sealed class LogoReplaceResult
     public List<(bool ok, string text)> Checks = new();
     /// <summary>RAW filler sections created when a recompressed LZMA section became shorter.</summary>
     public int AddedSections;
+    /// <summary>When the logo's file grew into the volume's free space: its new end offset in the flash image.</summary>
+    public long GrownEnd = -1;
+    internal UefiNode GrownFile;
 }
 
-/// <summary>Finds, extracts and replaces boot logos — uncompressed or inside LZMA-compressed volumes.</summary>
+/// <summary>Finds, extracts and replaces boot logos — uncompressed or inside LZMA / EFI / Tiano compressed sections.</summary>
 public static class BootLogo
 {
     static uint U32(byte[] d, long o) => o >= 0 && o + 4 <= d.Length ? BitConverter.ToUInt32(d, (int)o) : 0;
@@ -265,7 +270,7 @@ public static class BootLogo
 
     static LogoEntry Describe(Uefi.Tree tree, UefiBuffer buf, long off, PictureInfo info)
     {
-        var e = new LogoEntry { Buffer = buf, Offset = off, Info = info, Compressed = buf.Owner != null };
+        var e = new LogoEntry { Buffer = buf, Offset = off, Info = info, Compressed = buf.Owner != null, Compression = buf.Owner?.Encoding ?? "" };
         e.Bytes = buf.Data.AsSpan((int)off, (int)info.Length).ToArray();
         var node = Uefi.Locate(tree, buf, off, info.Length);
         e.Container = node;
@@ -300,7 +305,9 @@ public static class BootLogo
                 return e;
             }
         e.Replaceable = true;
-        e.Reason = e.Compressed ? "Inside an LZMA-compressed volume — the volume will be recompressed after the change." : "Stored uncompressed.";
+        e.Reason = !e.Compressed ? "Stored uncompressed."
+            : e.Compression == "LZMA" ? "Inside an LZMA-compressed volume — the volume will be recompressed after the change."
+            : $"Inside a {e.Compression}-compressed section (AMI Aptio 4 style) — it will be recompressed after the change.";
         return e;
     }
 
@@ -338,10 +345,15 @@ public static class BootLogo
         while (node != null)
         {
             var d = Copy(node.Buf);
-            if (node.Kind == UefiKind.File) { Uefi.FixFileChecksums(d, node); outermostFile = node; }
+            if (node.Kind == UefiKind.File) { Uefi.FixFileChecksums(d, node, res.GrownFile == node ? res.GrownEnd - node.Off : node.Len); outermostFile = node; }
             if (node.Kind == UefiKind.Section && node.Encoding == "CRC32")
                 BitConverter.GetBytes(Uefi.Crc32(d, node.DataOff, node.End - node.DataOff)).CopyTo(d, node.Off + (node.Len >= 0xFFFFFF ? 8 : 4) + 20);
-            if (node.Kind == UefiKind.Section && node.Inner != null)
+            if (node.Kind == UefiKind.Section && node.Inner != null && node.Encoding is "EFI" or "Tiano")
+            {
+                var err = RecompressEfi(image, node, Copy(node.Inner), d, res);
+                if (err != null) { res.Error = err; return res; }
+            }
+            else if (node.Kind == UefiKind.Section && node.Inner != null)
             {
                 // Recompress the child buffer. The stream is stored with its exact length (no padding after it, so even
                 // strict LZMA decoders accept it); the section shrinks and the freed bytes become a separate RAW filler
@@ -385,6 +397,68 @@ public static class BootLogo
         return Verify(image, logo, picture, res, outermostFile);
     }
 
+    /// <summary>
+    /// Recompresses an EFI/Tiano section in place. The stream keeps the section's length when it fits (the decoder reads only
+    /// the stream's own compressed size, so zero padding after it is ignored). When it does not fit and the section is the
+    /// last thing in a file that is itself the last file of a top-level volume (the usual AMI logo layout), the file grows
+    /// into the volume's free space — the same thing AMI's ChangeLogo does — and nothing else moves.
+    /// </summary>
+    static string RecompressEfi(byte[] original, UefiNode node, byte[] inner, byte[] d, LogoReplaceResult res)
+    {
+        var v = node.Encoding == "EFI" ? EfiCompression.Variant.Efi : EfiCompression.Variant.Tiano;
+        long room = node.End - node.DataOff;
+        byte[] chosen = null;
+        foreach (var s in EfiCompression.Variants(inner, v))
+        {
+            if (chosen == null || s.Length < chosen.Length) chosen = s;
+            if (chosen.Length <= room) break;
+        }
+        // prove the stream decodes back to exactly the new content before it goes anywhere near the image
+        var back = EfiCompression.Decompress(chosen, 0, chosen.Length, v);
+        if (!back.AsSpan().SequenceEqual(inner)) return $"Internal error: the {node.Encoding} stream did not decode back to the new content.";
+
+        bool ext = d[node.Off] == 0xFF && d[node.Off + 1] == 0xFF && d[node.Off + 2] == 0xFF;
+        int hdr = ext ? 8 : 4;
+        if (node.Type == 0x01) BitConverter.GetBytes((uint)inner.Length).CopyTo(d, node.Off + hdr);   // UncompressedLength
+
+        if (chosen.Length <= room)
+        {
+            Buffer.BlockCopy(chosen, 0, d, (int)node.DataOff, chosen.Length);
+            Array.Fill(d, (byte)0x00, (int)(node.DataOff + chosen.Length), (int)(room - chosen.Length));
+            res.Checks.Add((true, $"{node.Encoding} section recompressed: {chosen.Length:N0} of {room:N0} bytes"));
+            return null;
+        }
+
+        // ---- grow the file into the free space that follows it
+        var file = node.Parent;
+        var vol = file?.Parent;
+        long need = chosen.Length - room;
+        string why = file == null || file.Kind != UefiKind.File || ext || file.LargeFile ? "the section layout is not supported"
+            : file.Children.LastOrDefault() != node ? "the compressed section is not the last section of its file"
+            : file.Buf.Owner != null || vol == null || vol.Kind != UefiKind.Volume ? "the file is inside a nested volume"
+            : vol.Children.LastOrDefault() != file ? "another file follows it in the volume"
+            : null;
+        long newSecLen = node.DataOff - node.Off + chosen.Length;
+        long newFileLen = node.Off - file.Off + newSecLen;
+        long newEnd = file.Off + newFileLen;
+        if (why == null && (newSecLen > 0xFFFFFF || newFileLen > 0xFFFFFF)) why = "the file would exceed 16 MB";
+        if (why == null && (newEnd + 7 & ~7L) > vol.End) why = $"the volume has only {vol.End - file.End:N0} bytes of free space";
+        bool erased1 = (BitConverter.ToUInt32(original, (int)vol.Off + 0x2C) & 0x800) != 0;
+        if (why == null)
+            for (long i = file.End; i < Math.Min(vol.End, (newEnd + 7) & ~7L); i++)
+                if (original[i] != (erased1 ? 0xFF : 0x00)) { why = $"the space after the file is not empty (0x{i:X})"; break; }
+        if (why != null)
+            return $"After recompression the logo needs {need:N0} more bytes than the original ({room:N0} available) and the file cannot grow: {why}. Use a simpler picture (fewer colours/details).";
+
+        d[node.Off] = (byte)newSecLen; d[node.Off + 1] = (byte)(newSecLen >> 8); d[node.Off + 2] = (byte)(newSecLen >> 16);
+        Buffer.BlockCopy(chosen, 0, d, (int)node.DataOff, chosen.Length);
+        d[file.Off + 20] = (byte)newFileLen; d[file.Off + 21] = (byte)(newFileLen >> 8); d[file.Off + 22] = (byte)(newFileLen >> 16);
+        res.GrownFile = file;
+        res.GrownEnd = newEnd;
+        res.Checks.Add((true, $"{node.Encoding} section recompressed: {chosen.Length:N0} bytes — logo file grew by {newEnd - file.End:N0} bytes into the volume's free space ({vol.End - newEnd:N0} bytes left)"));
+        return null;
+    }
+
     static UefiBuffer FindRoot(UefiBuffer b)
     {
         while (b.Owner != null) b = b.Owner.Buf;
@@ -398,7 +472,7 @@ public static class BootLogo
         if (img.Length != original.Length) { res.Error = "Image size changed."; return res; }
 
         // 1. nothing outside the logo's top-level file changed
-        long lo = outermostFile?.Off ?? logo.Offset, hi = outermostFile?.End ?? logo.Offset + logo.Slot;
+        long lo = outermostFile?.Off ?? logo.Offset, hi = res.GrownEnd > 0 ? res.GrownEnd : outermostFile?.End ?? logo.Offset + logo.Slot;
         long firstDiff = -1, lastDiff = -1;
         for (long i = 0; i < img.Length; i++)
             if (img[i] != original[i]) { if (firstDiff < 0) firstDiff = i; lastDiff = i; }
@@ -415,9 +489,9 @@ public static class BootLogo
         res.Checks.Add((badFiles.Count <= oldBad, badFiles.Count == 0 ? "All file checksums valid" : $"{badFiles.Count} file(s) with checksum errors (original had {oldBad})"));
         bool crcOk = Uefi.All(tree).Where(n => n.Encoding == "CRC32").All(s => U32(s.Buf.Data, s.Off + 24) == Uefi.Crc32(s.Buf.Data, s.DataOff, s.End - s.DataOff));
         res.Checks.Add((crcOk, "CRC32 sections valid"));
-        var lzBad = Uefi.All(tree).Where(n => n.Encoding.StartsWith("LZMA (")).Select(n => n.Encoding).ToList();
+        var lzBad = Uefi.All(tree).Where(n => n.Encoding.StartsWith("LZMA (") || n.Encoding.StartsWith("EFI/Tiano (")).Select(n => n.Encoding).ToList();
         bool lzOk = lzBad.Count == 0;
-        res.Checks.Add((lzOk, lzOk ? "Every LZMA volume decompresses" : "LZMA problem: " + string.Join("; ", lzBad)));
+        res.Checks.Add((lzOk, lzOk ? "Every compressed section decompresses" : "Decompression problem: " + string.Join("; ", lzBad)));
 
         // 3. the new picture is where the old one was, byte-exact, and decodable by header
         var found = logos.FirstOrDefault(e => e.Compressed == logo.Compressed && e.Offset == logo.Offset && e.Buffer.Depth == logo.Buffer.Depth);

@@ -65,7 +65,7 @@ public partial class MainWindow
         if (!force && ReferenceEquals(_logoScanned, _buffer)) return;
         var data = _buffer;
         _logoScanned = data;
-        LogoEmpty.Text = "Scanning firmware volumes (decompressing LZMA sections)…";
+        LogoEmpty.Text = "Scanning firmware volumes (decompressing LZMA / EFI / Tiano sections)…";
         LogoEmpty.IsVisible = true;
         List<LogoEntry> logos;
         ProtectionInfo prot;
@@ -108,7 +108,7 @@ public partial class MainWindow
         LogoInfo.Text =
             $"{l.Info.Summary}\n" +
             $"size {l.Info.Length:N0} bytes · space for a replacement {l.Slot:N0} bytes\n" +
-            $"{(l.Compressed ? "inside an LZMA-compressed volume" : "stored uncompressed")} · {l.Location}\n" +
+            $"{(l.Compressed ? $"inside a {l.Compression}-compressed section" : "stored uncompressed")} · {l.Location}\n" +
             (c != null ? $"path: {Uefi.Describe(c)}\n" : "") +
             (l.Replaceable ? "✓ can be replaced" : "✗ " + l.Reason);
         _ = LogoReconvertAsync();
@@ -183,7 +183,7 @@ public partial class MainWindow
         if (_busy || l == null || conv?.Ok != true) return;
         if (!await AskAsync("Replace boot logo",
                 $"Replace the {l.Info.Summary} logo ({l.Location}) in the BUFFER with your picture?\n\n" +
-                (l.Compressed ? "The LZMA-compressed volume that contains it will be rebuilt. " : "") +
+                (l.Compressed ? $"The {l.Compression}-compressed section that contains it will be rebuilt" + (l.Compression == "LZMA" ? ". " : " (the logo file may grow into the volume's free space). ") : "") +
                 "The firmware is verified after the change; nothing is written to the chip until you program it.\n\n" +
                 "Test the result on this board and keep your original dump.", DialogKind.Question, "Replace", "Cancel"))
             return;
