@@ -14,9 +14,10 @@
   <img alt="Windows" src="https://img.shields.io/badge/Windows-10%20%7C%2011-0078D4">
   <img alt="Debian / Ubuntu" src="https://img.shields.io/badge/Debian%20%7C%20Ubuntu-.deb-A81D33">
   <img alt="Fedora" src="https://img.shields.io/badge/Fedora%20%7C%20RHEL-.rpm-51A2DA">
-  <img alt=".NET 10" src="https://img.shields.io/badge/.NET-10-512BD4">
-  <img alt="Avalonia UI" src="https://img.shields.io/badge/UI-Avalonia%2011-8B44AC">
-  <img alt="Self-tests" src="https://img.shields.io/badge/self--tests-114%20passing-3DDC97">
+</p>
+
+<p align="center">
+  <a href="https://github.com/SpeedGamer21/biosflash-studio/releases/latest"><img alt="Download the latest release" src="https://img.shields.io/github/v/release/SpeedGamer21/biosflash-studio?label=download&color=3DDC97"></a>
 </p>
 
 <p align="center">
@@ -35,9 +36,6 @@
   - [History & settings](#11-history--settings) · [Diagnostics & Linux](#12-diagnostics--linux) · [Light & dark themes](#13-light--dark-themes)
 - [Download & install](#download--install)
 - [Connecting a CH341A](#connecting-a-ch341a)
-- [Building from source](#building-from-source)
-- [Testing](#testing)
-- [Project layout](#project-layout)
 - [Safety](#safety)
 - [License](#license)
 
@@ -60,11 +58,11 @@
 
 <img src="docs/screenshots/overview.png" alt="Programmer dashboard" width="900">
 
-- **Status cards** for the programmer (backend, driver, speed), the detected chip (vendor, JEDEC ID, capacity, voltage, addressing) and the firmware buffer (size, CRC32, SHA-256, checksum).
-- **Operation deck:** Detect, Read, Erase, Blank check, Program, Verify and **Auto Program** (unprotect → erase → blank → program → verify). Each has a keyboard shortcut.
+- **Status cards** for the programmer, the detected chip and the firmware buffer. They stay compact; the **Details** button expands them to show the backend, driver and speed, the chip's vendor, JEDEC ID, capacity, voltage and addressing, and the buffer's size, CRC32, SHA-256 and checksum.
+- **Operation bar:** Detect, Read, Erase, Blank check, Program, Verify and **Auto Program** (unprotect → erase → blank → program → verify). Each has a keyboard shortcut.
 - **Live progress** with speed, elapsed and remaining time, current address, and a colour-coded result badge.
 - **Overview page:** platform, ME version, BIOS vendor and version, descriptor status, GbE MAC, the **DMI table** (brand, model, serial, UUID, SKU, board), the **Windows OEM key** with copy/export, and a flash-layout bar.
-- **Activity log** with timestamps and colour levels, saved per session. It can be collapsed.
+- **Activity log** with timestamps and colour levels, saved per session. Open or close it with the **Log** button.
 
 ### 2. Hex editor
 
@@ -216,16 +214,17 @@ Graphite/mint dark theme and paper/emerald light theme, switchable from the side
 
 ## Download & install
 
-Get the file for your system from the **[Releases](../../releases)** page.
+**Latest version: 2.1.0.** Click your system to download, or browse every version on the **[Releases](https://github.com/SpeedGamer21/biosflash-studio/releases)** page.
 
-| System | File | Install |
+| System | Download | Install |
 |---|---|---|
-| **Windows 10/11 (x64)** | `BiosFlashStudio-2.1.0-win-x64-setup.exe` | Run the installer. You can install for the current user (no admin) or for all users. It adds a Start-menu entry and a *demo mode* shortcut |
-| **Debian / Ubuntu / Mint (x64)** | `biosflash-studio_2.1.0_amd64.deb` | `sudo apt install ./biosflash-studio_2.1.0_amd64.deb` |
-| **Debian / Raspberry Pi OS (ARM64)** | `biosflash-studio_2.1.0_arm64.deb` | `sudo apt install ./biosflash-studio_2.1.0_arm64.deb` |
-| **Fedora / RHEL / Rocky (x64)** | `biosflash-studio-2.1.0-1.x86_64.rpm` | `sudo dnf install ./biosflash-studio-2.1.0-1.x86_64.rpm` |
-| **Fedora (ARM64)** | `biosflash-studio-2.1.0-1.aarch64.rpm` | `sudo dnf install ./biosflash-studio-2.1.0-1.aarch64.rpm` |
-| **Any Linux (portable)** | `biosflash-studio-2.1.0-linux-x64.tar.gz` (or `-arm64`) | Unpack, then run `sudo sh install.sh`, or just `./BiosFlashStudio` |
+| **Windows 10/11 (x64)** | [⬇ BiosFlashStudio-2.1.0-win-x64-setup.exe](https://github.com/SpeedGamer21/biosflash-studio/releases/download/v2.1.0/BiosFlashStudio-2.1.0-win-x64-setup.exe) | Run the installer. You can install for the current user (no admin) or for all users. It adds a Start-menu entry and a *demo mode* shortcut |
+| **Debian / Ubuntu / Mint (x64)** | [⬇ biosflash-studio_2.1.0_amd64.deb](https://github.com/SpeedGamer21/biosflash-studio/releases/download/v2.1.0/biosflash-studio_2.1.0_amd64.deb) | `sudo apt install ./biosflash-studio_2.1.0_amd64.deb` |
+| **Debian / Raspberry Pi OS (ARM64)** | [⬇ biosflash-studio_2.1.0_arm64.deb](https://github.com/SpeedGamer21/biosflash-studio/releases/download/v2.1.0/biosflash-studio_2.1.0_arm64.deb) | `sudo apt install ./biosflash-studio_2.1.0_arm64.deb` |
+| **Fedora / RHEL / Rocky (x64)** | [⬇ biosflash-studio-2.1.0-1.x86_64.rpm](https://github.com/SpeedGamer21/biosflash-studio/releases/download/v2.1.0/biosflash-studio-2.1.0-1.x86_64.rpm) | `sudo dnf install ./biosflash-studio-2.1.0-1.x86_64.rpm` |
+| **Fedora (ARM64)** | [⬇ biosflash-studio-2.1.0-1.aarch64.rpm](https://github.com/SpeedGamer21/biosflash-studio/releases/download/v2.1.0/biosflash-studio-2.1.0-1.aarch64.rpm) | `sudo dnf install ./biosflash-studio-2.1.0-1.aarch64.rpm` |
+| **Any Linux x64 (portable)** | [⬇ biosflash-studio-2.1.0-linux-x64.tar.gz](https://github.com/SpeedGamer21/biosflash-studio/releases/download/v2.1.0/biosflash-studio-2.1.0-linux-x64.tar.gz) | Unpack, then run `sudo sh install.sh`, or just `./BiosFlashStudio` |
+| **Any Linux ARM64 (portable)** | [⬇ biosflash-studio-2.1.0-linux-arm64.tar.gz](https://github.com/SpeedGamer21/biosflash-studio/releases/download/v2.1.0/biosflash-studio-2.1.0-linux-arm64.tar.gz) | Unpack, then run `sudo sh install.sh`, or just `./BiosFlashStudio` |
 
 The Linux packages pull in `libusb` automatically. They also install a udev rule so the programmer works **without root**: re-plug the CH341A once after installing. More details are in [packaging/linux/README-LINUX.md](packaging/linux/README-LINUX.md).
 
@@ -239,82 +238,6 @@ To look around without a programmer, start **BiosFlash Studio (demo mode)** from
    - **Linux:** no driver is needed. libusb and the udev rule come with the package; *Diagnostics → Install udev rule* also works.
 3. **Clip on:** pin 1 goes to the red wire. For laptops, unplug AC, remove the battery and the CMOS cell.
 4. **Detect, then Read:** press **F5**, then **F6**. Every read is saved automatically to `Documents/BiosFlash Studio/Backups`.
-
-## Building from source
-
-You need the [.NET 10 SDK](https://dot.net).
-
-```sh
-# run from source
-dotnet run --project src/BiosFlashStudio.csproj               # add: -- --demo
-```
-
-**Windows**
-
-```bat
-build.bat              :: framework-dependent EXE        -> dist\
-build.bat portable     :: self-contained single EXE      -> dist\portable\
-build.bat installer    :: setup.exe (Inno Setup 6)        -> dist\installers\
-build.bat linux        :: cross-builds linux-x64/arm64 + .tar.gz
-```
-
-**Linux** (Debian/Ubuntu or Fedora)
-
-```sh
-./build.sh             # .tar.gz + .deb (dpkg-deb) + .rpm (rpmbuild) for this machine
-./build.sh arm64       # cross-build for ARM64
-# package binaries already cross-built on Windows, no .NET SDK needed:
-./packaging/linux/build-packages.sh x64 --prebuilt
-```
-
-On Fedora, install `rpm-build` to get `.rpm` output. On Debian/Ubuntu, `dpkg-deb` is already installed and `rpmbuild` comes with the `rpm` package.
-
-**Useful command-line options:**
-- `--demo`: simulator plus demo firmware.
-- `--page=N`: open a page directly.
-- `--light`: start in the light theme.
-- `--stock=<file>`: load a stock image into Repair Tools.
-- `--extract=<file>`: open a vendor update in the Update Extractor.
-- `--diag`: open Diagnostics and run the driver check.
-- A file path opens that file (`.cap` files open in the CAP tool).
-
-## Testing
-
-A headless self-test exercises everything in software. It runs these against simulated chips and a packet-level CH341A emulator:
-- the analyzer
-- the SPI and I²C drivers
-- the raw USB protocol used by the WinUSB and libusb backends
-- the capsule parser, the repair engine and the update extractor
-- the boot logo engine (UEFI parser, LZMA and EFI/Tiano rebuild, conversions)
-
-```sh
-run-tests.bat           # or ./run-tests.sh   — full run with live progress bars (91 tests)
-run-tests.bat --quick   # skips the 32 MB chip (~1.5 min)
-run-tests.bat --repair  # repair tools, update extractor and boot logo (~3 s)
-run-tests.bat --logo    # boot logo engine only (~2 s)
-```
-
-Progress is also written to `tests/SelfTest/bin/Release/net10.0/selftest.log`.
-
-> **Note:** all automated tests run against simulated hardware and synthetic firmware. Please report results with real programmers, boards and BIOS updates.
-
-## Project layout
-
-```
-src/
-  Hardware/    CH341 backends: WCH DLL, shared raw USB protocol, WinUSB + libusb transports, simulator, USB scanner
-  Flash/       chip database, SPI NOR driver, I²C EEPROM driver
-  Analysis/    firmware analyzer, UEFI volume parser, boot logo engine, capsule parser, repair engine, update extractor, demo image
-  Controls/    hex editor, region bar, usage map, pinout drawings
-  Ui/          theme palette, stroke icons, dialogs
-  Platform/    OS helpers (udev rule install, folders)
-  *.axaml      Avalonia UI
-tests/SelfTest/  headless self-test
-packaging/
-  windows/     Inno Setup script
-  linux/       .deb/.rpm/.tar.gz builder, install.sh, udev rule, desktop entry, icon
-docs/          logo and screenshots
-```
 
 ## Safety
 
