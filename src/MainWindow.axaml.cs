@@ -456,6 +456,7 @@ public partial class MainWindow : Window
 
     void UpdateBufferInfo()
     {
+        QuickStart.IsVisible = _buffer.Length == 0;
         if (_buffer.Length == 0)
         {
             BufSize.Text = BufCrc.Text = BufSha.Text = BufSum.Text = "—";

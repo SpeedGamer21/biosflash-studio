@@ -71,11 +71,6 @@ public partial class MainWindow
         bool on = _prog?.IsOpen == true;
         var key = on ? "Good" : "Bad";
 
-        ConnPill.Res(Border.BorderBrushProperty, key);
-        ConnPill.Res(Border.BackgroundProperty, on ? "GoodBg" : "BadBg");
-        ConnDot.Res(Avalonia.Controls.Shapes.Shape.FillProperty, key);
-        ConnText.Res(TextBlock.ForegroundProperty, key);
-        ConnText.Text = on ? $"{_prog.Name} connected" : "Disconnected";
         ConnectText.Text = on ? "Disconnect" : "Connect";
         SetPill(HwPill, HwPillText, on ? "ONLINE" : "OFFLINE", key);
         HwInterface.Text = on ? $"{_prog.Name} · USB 2.0" : "CH341A · not connected";
@@ -86,7 +81,6 @@ public partial class MainWindow
         ToolTip.SetTip(HwDriver, HwDriver.Text);
         string[] sp = { "Low", "Standard", "Fast", "High" };
         HwSpeed.Text = $"{sp[Math.Clamp(_set.SpeedIndex, 0, 3)]} (mode {_set.SpeedIndex})";
-        StatusTarget.Text = $"{(on ? _prog.Name : "CH341A")} · {(IsI2c ? "I²C EEPROM" : "SPI flash")} · {(on ? _prog.Backend : "offline")}";
     }
 
     // =====================================================================  operation runner
@@ -95,24 +89,16 @@ public partial class MainWindow
         foreach (var b in new[] { DetectBtn, ReadBtn, EraseBtn, BlankBtn, ProgramBtn, VerifyBtn, AutoBtn, ConnectBtn })
             b.IsEnabled = !busy;
         ModeCombo.IsEnabled = ChipCombo.IsEnabled = BackendCombo.IsEnabled = !busy;
-        CancelBtn.IsEnabled = busy;
+        CancelBtn.IsVisible = OpStats.IsVisible = busy;
         Hex.ReadOnly = busy;
         SetStatus(busy ? "Working…" : "Ready", busy ? LogLevel.Accent : LogLevel.Ok);
     }
 
-    void SetResult(int state, string title, string text)
+    /// <summary>Colours the operation line by outcome. state: 0 running, 1 ok, 2 fail, 3 cancelled</summary>
+    void SetResult(int state)
     {
-        // state: 0 running, 1 ok, 2 fail, 3 cancelled
-        string key = state switch { 1 => "Good", 2 => "Bad", 3 => "Warn", _ => "Info" };
-
-        ResultBox.Res(Border.BorderBrushProperty, key);
-        ResultBox.Res(Border.BackgroundProperty, state switch { 1 => "GoodBg", 2 => "BadBg", 3 => "WarnBg", _ => "InfoBg" });
-        ResultIco.Res(Ico.BrushProperty, key);
-        ResultIco.Kind = state switch { 1 => "check", 2 => "cancel", 3 => "warn", _ => "clock" };
-        ResultTitle.Res(TextBlock.ForegroundProperty, key);
-        ResultTitle.Text = title;
-        ResultText.Text = text;
-        ResultText.Res(TextBlock.ForegroundProperty, state == 0 ? "TxtDim" : "Txt");
+        OpTitle.Res(TextBlock.ForegroundProperty, state switch { 1 => "Good", 2 => "Bad", 3 => "Warn", _ => "Info" });
+        OpDetail.Res(TextBlock.ForegroundProperty, state is 2 or 3 ? "Txt" : "TxtDim");
     }
 
     void UpdateProgressUi()
@@ -145,7 +131,7 @@ public partial class MainWindow
         _backendKind = CurrentBackend();
         OpTitle.Text = title;
         OpDetail.Text = "Working…";
-        SetResult(0, title + "…", "Operation in progress");
+        SetResult(0);
         _opWatch.Restart();
         _uiTimer.Start();
         Log("OPERATION", $"Operation started: {title}", LogLevel.Accent);
@@ -183,7 +169,7 @@ public partial class MainWindow
             if (_progress.Total > 0) { OpBar.Value = 1000; OpPercent.Text = "100.0%"; OpRemain.Text = "00:00"; }
             OpTitle.Text = "✓ " + title + " COMPLETE";
             OpDetail.Text = msg;
-            SetResult(1, "✓ " + title + " COMPLETE", msg);
+            SetResult(1);
             Log("OPERATION", $"Operation completed: {title} — {msg}", LogLevel.Ok);
             SetStatus(title + " complete");
         }
@@ -191,7 +177,7 @@ public partial class MainWindow
         {
             OpTitle.Text = (_lastCancelled ? "■ " : "✗ ") + title + (_lastCancelled ? " CANCELLED" : " FAILED");
             OpDetail.Text = err;
-            SetResult(_lastCancelled ? 3 : 2, title + (_lastCancelled ? " CANCELLED" : " FAILED"), err);
+            SetResult(_lastCancelled ? 3 : 2);
             Log("OPERATION", $"{title} {(_lastCancelled ? "cancelled" : "FAILED")}: {err}", _lastCancelled ? LogLevel.Warn : LogLevel.Error);
             SetStatus(err, _lastCancelled ? LogLevel.Warn : LogLevel.Error);
         }
@@ -331,7 +317,7 @@ public partial class MainWindow
         if (!ok || result == null) return;
         string name = $"{chip.Name.Split('/')[0]}_read_{DateTime.Now:yyyyMMdd_HHmmss}.bin";
         SetBuffer(result, name, null, "Chip read", true);
-        if (warn != null) SetResult(2, "READ UNRELIABLE", warn);
+        if (warn != null) { OpTitle.Text = "✗ READ UNRELIABLE"; OpDetail.Text = warn; SetResult(2); }
         if (_set.AutoBackup)
         {
             try

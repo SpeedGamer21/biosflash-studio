@@ -30,12 +30,10 @@
                             <TextBlock x:Name="ThemeText" Text="Light theme"/>
                         </StackPanel>
                     </Button>
-                    <Border Classes="inset" Padding="10,8">
-                        <StackPanel Spacing="2">
-                            <TextBlock x:Name="PlatformText" Text="Windows" FontSize="11" Foreground="{DynamicResource TxtDim}" TextTrimming="CharacterEllipsis"/>
-                            <TextBlock Text="v2.1 · keep a verified backup" FontSize="11" Foreground="{DynamicResource TxtFaint}"/>
-                        </StackPanel>
-                    </Border>
+                    <DockPanel Margin="8,0">
+                        <TextBlock DockPanel.Dock="Left" Text="v2.1 · " FontSize="11" Foreground="{DynamicResource TxtFaint}"/>
+                        <TextBlock x:Name="PlatformText" Text="Windows" FontSize="11" Foreground="{DynamicResource TxtFaint}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding $self.Text}"/>
+                    </DockPanel>
                 </StackPanel>
 
                 <ListBox x:Name="Nav" Classes="nav" SelectionChanged="Nav_SelectionChanged">
@@ -69,12 +67,6 @@
                     <TextBlock x:Name="PageSub" Text="Firmware identity, DMI and OEM key at a glance" Classes="dim" FontSize="12.5" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding $self.Text}"/>
                 </StackPanel>
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                    <Border x:Name="ConnPill" CornerRadius="20" Padding="12,6" BorderThickness="1" BorderBrush="{DynamicResource Bad}" Background="{DynamicResource BadBg}">
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <Ellipse x:Name="ConnDot" Width="8" Height="8" Fill="{DynamicResource Bad}"/>
-                            <TextBlock x:Name="ConnText" Text="Disconnected" FontWeight="SemiBold" FontSize="12" Foreground="{DynamicResource Bad}"/>
-                        </StackPanel>
-                    </Border>
                     <ComboBox x:Name="BackendCombo" Width="235" SelectionChanged="BackendCombo_SelectionChanged" ToolTip.Tip="Programmer backend / driver. Linux needs no extra driver: the CH341A is driven through libusb. Auto detect picks the right one and connects when the programmer is plugged in."/>
                     <Button x:Name="ConnectBtn" Classes="accent" Click="Connect_Click">
                         <StackPanel Orientation="Horizontal" Spacing="7"><ui:Ico Kind="usb"/><TextBlock x:Name="ConnectText" Text="Connect"/></StackPanel>
@@ -222,17 +214,17 @@
                                 <StackPanel Orientation="Horizontal" Spacing="7"><ui:Ico Kind="auto"/><TextBlock Text="Auto Program"/></StackPanel>
                             </Button>
                         </WrapPanel>
-                        <Button x:Name="CancelBtn" Grid.Column="2" Classes="op danger" Margin="0" IsEnabled="False" Click="Cancel_Click" ToolTip.Tip="Stop the running operation · Esc">
+                        <Button x:Name="CancelBtn" Grid.Column="2" Classes="op danger" Margin="0" IsVisible="False" Click="Cancel_Click" ToolTip.Tip="Stop the running operation · Esc">
                             <StackPanel Orientation="Horizontal" Spacing="7"><ui:Ico Kind="cancel"/><TextBlock Text="Cancel"/></StackPanel>
                         </Button>
                     </Grid>
 
-                    <Grid Grid.Row="1" ColumnDefinitions="*,Auto" Margin="0,12,0,0">
-                        <StackPanel Spacing="6" Margin="0,0,16,0" VerticalAlignment="Center">
+                    <StackPanel Grid.Row="1" Spacing="6" Margin="0,12,0,0">
                             <Grid ColumnDefinitions="Auto,*,Auto">
-                                <TextBlock x:Name="OpTitle" Text="IDLE" FontWeight="Bold" FontSize="12" Margin="0,0,10,0"/>
-                                <TextBlock Grid.Column="1" x:Name="OpDetail" Text="Ready." Classes="dim" FontSize="12" TextTrimming="CharacterEllipsis"/>
-                                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" Margin="12,0,0,0">
+                                <TextBlock x:Name="OpTitle" Text="IDLE" FontWeight="Bold" FontSize="12" Margin="0,0,10,0" Foreground="{DynamicResource TxtDim}"/>
+                                <TextBlock Grid.Column="1" x:Name="OpDetail" Text="Ready." Classes="dim" FontSize="12" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding $self.Text}"/>
+                                <!-- live figures: only shown while an operation runs -->
+                                <StackPanel x:Name="OpStats" Grid.Column="2" Orientation="Horizontal" Spacing="6" Margin="12,0,0,0" IsVisible="False">
                                     <TextBlock x:Name="OpBytes" Text="0 B / 0 B" Classes="mono dim" FontSize="11.5" Margin="0,0,8,0"/>
                                     <TextBlock x:Name="OpSpeed" Text="—" Classes="mono dim" FontSize="11.5" Margin="0,0,8,0" ToolTip.Tip="Speed"/>
                                     <TextBlock x:Name="OpElapsed" Text="00:00" Classes="mono dim" FontSize="11.5" ToolTip.Tip="Elapsed"/>
@@ -243,18 +235,7 @@
                                 </StackPanel>
                             </Grid>
                             <ProgressBar x:Name="OpBar" Maximum="1000"/>
-                        </StackPanel>
-                        <Border x:Name="ResultBox" Grid.Column="1" Width="260" CornerRadius="10" BorderThickness="1" Padding="10,6"
-                                BorderBrush="{DynamicResource Line}" Background="{DynamicResource CardBg2}">
-                            <Grid ColumnDefinitions="Auto,*">
-                                <ui:Ico x:Name="ResultIco" Kind="info" Width="20" Height="20" Brush="{DynamicResource TxtDim}" Margin="0,0,10,0"/>
-                                <StackPanel Grid.Column="1">
-                                    <TextBlock x:Name="ResultTitle" Text="READY" FontWeight="Bold" FontSize="12" Foreground="{DynamicResource TxtDim}" TextTrimming="CharacterEllipsis"/>
-                                    <TextBlock x:Name="ResultText" Text="No operation yet." FontSize="11.5" Foreground="{DynamicResource TxtDim}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding $self.Text}"/>
-                                </StackPanel>
-                            </Grid>
-                        </Border>
-                    </Grid>
+                    </StackPanel>
                 </Grid>
             </Border>
 
@@ -350,7 +331,8 @@
                                 </StackPanel>
                             </Border>
 
-                            <Border Classes="card">
+                            <!-- getting-started steps: only while no image is loaded -->
+                            <Border x:Name="QuickStart" Classes="card">
                                 <Grid ColumnDefinitions="*,*,*,*">
                                     <StackPanel Margin="0,0,14,0" Spacing="4">
                                         <TextBlock Text="1 · Connect" FontWeight="SemiBold"/>
@@ -617,7 +599,7 @@
                                 <Border Classes="card">
                                     <StackPanel Spacing="10">
                                         <Grid ColumnDefinitions="*,Auto">
-                                            <StackPanel Orientation="Horizontal" Spacing="8"><ui:Ico Kind="tune" Brush="{DynamicResource Accent}"/><TextBlock Classes="h" Text="QUICK FIXES (BUFFER)"/></StackPanel>
+                                            <StackPanel Orientation="Horizontal" Spacing="8"><ui:Ico Kind="tune" Brush="{DynamicResource Accent}"/><TextBlock Classes="h" Text="QUICK FIXES"/></StackPanel>
                                             <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
                                                 <Button Classes="small" Click="RepRefresh_Click" ToolTip.Tip="Rescan the buffer"><ui:Ico Kind="refresh" Width="14" Height="14"/></Button>
                                                 <Button x:Name="RepUndoBtn" Classes="small" IsEnabled="False" Click="RepUndo_Click"><StackPanel Orientation="Horizontal" Spacing="6"><ui:Ico Kind="refresh" Width="14" Height="14"/><TextBlock Text="Undo last change"/></StackPanel></Button>
@@ -666,7 +648,7 @@
 
                                 <Border Classes="card">
                                     <StackPanel Spacing="10">
-                                        <StackPanel Orientation="Horizontal" Spacing="8"><ui:Ico Kind="hex" Brush="{DynamicResource Info}"/><TextBlock Classes="h" Text="BINARY TOOLS · EC FIRMWARE, SPLIT, RESIZE"/></StackPanel>
+                                        <StackPanel Orientation="Horizontal" Spacing="8"><ui:Ico Kind="hex" Brush="{DynamicResource Info}"/><TextBlock Classes="h" Text="BINARY TOOLS"/></StackPanel>
                                         <Grid ColumnDefinitions="Auto,*,16,Auto,*" RowDefinitions="Auto,6,Auto">
                                             <TextBlock Classes="dim" Text="Offset" Margin="0,0,8,0"/>
                                             <TextBox Grid.Column="1" x:Name="BinOffset" Text="0x0"/>
@@ -695,7 +677,7 @@
                             <StackPanel Grid.Column="2" Spacing="16">
                                 <Border Classes="card">
                                     <StackPanel Spacing="10">
-                                        <StackPanel Orientation="Horizontal" Spacing="8"><ui:Ico Kind="file" Brush="{DynamicResource Warn}"/><TextBlock Classes="h" Text="STOCK FIRMWARE · DONOR IMAGE"/></StackPanel>
+                                        <StackPanel Orientation="Horizontal" Spacing="8"><ui:Ico Kind="file" Brush="{DynamicResource Warn}"/><TextBlock Classes="h" Text="STOCK FIRMWARE"/></StackPanel>
                                         <TextBlock Classes="hint" Text="The buffer is your original dump. Load the vendor's stock image (a .bin, .cap, or a BIOS update — it is unpacked automatically), then choose what to take from each."/>
                                         <WrapPanel>
                                             <Button Classes="accent" Margin="0,0,8,6" Click="RepLoadStock_Click"><StackPanel Orientation="Horizontal" Spacing="7"><ui:Ico Kind="open"/><TextBlock Text="Load stock image…"/></StackPanel></Button>
@@ -707,7 +689,7 @@
                                 </Border>
                                 <Border Classes="card">
                                     <StackPanel Spacing="10">
-                                        <StackPanel Orientation="Horizontal" Spacing="8"><ui:Ico Kind="merge" Brush="{DynamicResource Info}"/><TextBlock Classes="h" Text="REGION MERGE · RESULT = STOCK + TICKED REGIONS FROM YOUR DUMP"/></StackPanel>
+                                        <StackPanel Orientation="Horizontal" Spacing="8"><ui:Ico Kind="merge" Brush="{DynamicResource Info}"/><TextBlock Classes="h" Text="REGION MERGE" ToolTip.Tip="Result = stock image + the ticked regions from your dump"/></StackPanel>
                                         <WrapPanel>
                                             <Button Classes="small" Margin="0,0,6,6" Tag="bios" Click="RepPreset_Click" ToolTip.Tip="Stock BIOS region, everything else from your dump">Repair BIOS region</Button>
                                             <Button Classes="small" Margin="0,0,6,6" Tag="fd" Click="RepPreset_Click" ToolTip.Tip="Stock descriptor, everything else from your dump">Repair descriptor</Button>
@@ -728,7 +710,7 @@
                                 </Border>
                                 <Border Classes="card">
                                     <StackPanel Spacing="10">
-                                        <StackPanel Orientation="Horizontal" Spacing="8"><ui:Ico Kind="key" Brush="{DynamicResource Good}"/><TextBlock Classes="h" Text="IDENTITY TRANSFER · FROM YOUR DUMP INTO THE RESULT"/></StackPanel>
+                                        <StackPanel Orientation="Horizontal" Spacing="8"><ui:Ico Kind="key" Brush="{DynamicResource Good}"/><TextBlock Classes="h" Text="IDENTITY TRANSFER"/></StackPanel>
                                         <DataGrid x:Name="RepIdGrid" Height="170" IsReadOnly="False">
                                             <DataGrid.Columns>
                                                 <DataGridCheckBoxColumn Header="Transfer" Binding="{Binding Transfer}" Width="86"/>
@@ -1153,13 +1135,12 @@
 
         <!-- ======================= STATUS BAR ======================= -->
         <Border Grid.Row="1" Grid.Column="1" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="20,6">
-            <Grid ColumnDefinitions="*,Auto,*">
+            <Grid ColumnDefinitions="*,Auto">
                 <StackPanel Orientation="Horizontal" Spacing="8">
                     <Ellipse x:Name="StatusDot" Width="8" Height="8" Fill="{DynamicResource Good}"/>
                     <TextBlock x:Name="StatusText" Text="Ready" Classes="dim" FontSize="12" TextTrimming="CharacterEllipsis"/>
                 </StackPanel>
-                <TextBlock Grid.Column="1" x:Name="StatusTarget" Classes="mono" FontSize="12" Foreground="{DynamicResource Accent}" Text="CH341A · SPI"/>
-                <TextBlock Grid.Column="2" HorizontalAlignment="Right" Classes="dim" FontSize="12" Text="F5 Detect · F6 Read · F9 Program · F8 Auto · Ctrl+O Open"/>
+                <TextBlock Grid.Column="1" Margin="16,0,0,0" FontSize="12" Foreground="{DynamicResource TxtFaint}" Text="F5 Detect · F6 Read · F9 Program · F8 Auto · Ctrl+O Open"/>
             </Grid>
         </Border>
     </Grid>
