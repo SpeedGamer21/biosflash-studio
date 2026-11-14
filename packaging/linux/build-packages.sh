@@ -115,8 +115,8 @@ Name:           biosflash-studio
 Version:        $VERSION
 Release:        1
 Summary:        CH341A SPI/I2C BIOS programmer with firmware analysis
-License:        Unspecified
-URL:            https://localhost/biosflash-studio
+License:        GPL-3.0-or-later
+URL:            https://github.com/SpeedGamer21/biosflash-studio
 AutoReqProv:    no
 Requires:       libusb1, fontconfig, libX11, libICE, libSM
 %global debug_package %{nil}

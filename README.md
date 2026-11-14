@@ -21,6 +21,10 @@
 </p>
 
 <p align="center">
+  ⚠️ <b>Flashing firmware can brick your device. Use this software at your own risk; the author is not responsible for any damage.</b> <a href="#disclaimer">Read the disclaimer</a>.
+</p>
+
+<p align="center">
   <img src="docs/screenshots/overview.png" alt="BiosFlash Studio overview" width="900">
 </p>
 
@@ -37,6 +41,7 @@
 - [Download & install](#download--install)
 - [Connecting a CH341A](#connecting-a-ch341a)
 - [Safety](#safety)
+- [Disclaimer](#disclaimer)
 - [License](#license)
 
 ## Highlights
@@ -250,9 +255,27 @@ To look around without a programmer, start **BiosFlash Studio (demo mode)** from
 - For ASUS USB BIOS FlashBack, keep the original `.CAP` with its header. Strip the header only for programmer use.
 - BIOS password removal and other security-bypass features are intentionally **not** included.
 
+## Disclaimer
+
+> [!CAUTION]
+> **Use BiosFlash Studio entirely at your own risk.**
+
+Reading, erasing and writing BIOS/UEFI firmware is risky by nature. A wrong chip setting, a bad clip contact, a power loss, an incompatible or modified image, or a faulty programmer can leave a device unable to start ("bricked"). This can happen even when the software works exactly as designed.
+
+By downloading or using this software, you agree that:
+
+- The author is **not responsible** for any damage to your motherboard, laptop, flash chip, programmer or any other hardware, including a device that no longer boots.
+- The author is **not responsible** for any loss of data, settings, serial numbers, MAC addresses, product keys or other information stored in the firmware.
+- The author is **not responsible** for voided warranties, repair costs, lost time, or any other direct or indirect damage that results from using, or being unable to use, this software.
+- **You** are responsible for checking that the chip, voltage, image and wiring are correct before writing anything, and for **keeping a verified backup of the original firmware**.
+
+The software is provided "as is", without any warranty. See sections 15 and 16 of the [GPL-3.0 license](LICENSE) for the full terms.
+
 ## License
 
-No license has been chosen yet. Until one is added, all rights are reserved by the author.
+BiosFlash Studio is free software, released under the **[GNU General Public License v3.0](LICENSE)**. Copyright © 2026 Aljann Avanzado.
+
+You may use, study, share and change it. If you share a changed version, it must also be released under the GPL-3.0 with its source code. The software comes **without any warranty**; see the [license](LICENSE) for the full terms.
 
 Third-party components: [Avalonia](https://avaloniaui.net) (MIT), [SkiaSharp](https://github.com/mono/SkiaSharp) (MIT) and [SharpCompress](https://github.com/adamhathcock/sharpcompress) (MIT, LZMA codec).
 
